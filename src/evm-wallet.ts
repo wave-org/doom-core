@@ -14,8 +14,8 @@ import { secp256k1 } from "@noble/curves/secp256k1";
 
 export class EVMWallet {
   readonly hdWallet: Wallet;
-  readonly name: string;
   readonly compressedPublicKey: string;
+  name: string;
   constructor(wallet: Wallet, name = "DOOM cold wallet") {
     this.hdWallet = wallet;
     this.name = name;
