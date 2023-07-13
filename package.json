@@ -38,6 +38,7 @@
     "@keystonehq/bc-ur-registry-eth": "^0.19.1",
     "@keystonehq/ur-decoder": "^0.12.2",
     "@metamask/eth-sig-util": "^6.0.0",
+    "@noble/curves": "^1.1.0",
     "ethereum-cryptography": "^2.1.1"
   },
   "devDependencies": {
