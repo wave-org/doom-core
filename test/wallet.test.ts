@@ -1,4 +1,4 @@
-import { Wallet } from "./wallet";
+import { Wallet } from "../src/wallet";
 
 describe("Wallet", function () {
   const mnemonic =
@@ -30,5 +30,30 @@ describe("Wallet", function () {
     const wallet = Wallet.fromExtendedKey(extenedKey);
     expect(wallet.address).toBe("0x40fdf02df1bd7104441b17b2c629c2d339dab655");
     expect(wallet.mnemonic).toBeNull();
+  });
+
+  it("get derived address", async function () {
+    const wallet = Wallet.fromExtendedKey(
+      "xprv9s21ZrQH143K2j5M2tjsLq291PngUQCDGGAh3rsFCufb2wWqbNPmbWmAh46kYn6pbfNSEwCnPanQ3vFzKwc3CiEKxjGjybPZR6TBv2wqZoW"
+    );
+    const address0 = wallet.getDerivedAddressByIndex(0);
+
+    expect(address0.toLowerCase()).toBe(
+      "0xF21017473Cd241f104ecFB6097e1F1789BE324A2".toLowerCase()
+    );
+    const address12 = wallet.getDerivedAddressByIndex(12);
+
+    expect(address12.toLowerCase()).toBe(
+      "0xc9c758AfAf44cE08178D346CE4C39B1334EC4289".toLowerCase()
+    );
+  });
+
+  it("get derived address 2", async function () {
+    const wallet = Wallet.fromMnemonic(mnemonic, password);
+    const address0 = wallet.getDerivedAddressByIndex(0);
+
+    expect(address0.toLowerCase()).toBe(
+      "0x1167c0B3D645e271416cbffc93036D8e1150b745".toLowerCase()
+    );
   });
 });

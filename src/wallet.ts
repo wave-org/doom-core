@@ -11,9 +11,18 @@ import {
   isValidPrivate,
   privateToPublic,
   publicToAddress,
+  privateToAddress,
   stripHexPrefix,
   toBuffer,
 } from "@ethereumjs/util";
+
+type MiddleKey = {
+  publicKey: Buffer;
+  chainCode: Buffer;
+  parentFingerprint: Buffer;
+  index: number;
+  depth: number;
+};
 
 export class Wallet {
   readonly privateKey: string;
@@ -22,11 +31,8 @@ export class Wallet {
   readonly address: string;
   readonly mnemonic: string | null;
   protected hdKey: HDKey;
-
-  /**
-   * m/8/9/6/4/index
-   */
-  static DefaultBasePath = "m/8/9/6/4";
+  private middleHDKey: HDKey;
+  readonly middleKey: MiddleKey;
 
   static fromMnemonic(mnemonic: string, password: string) {
     let seed = mnemonicToSeedSync(mnemonic, password);
@@ -60,14 +66,43 @@ export class Wallet {
     this.address = bufferToHex(
       publicToAddress(privateToPublic(Buffer.from(hdKey.privateKey)))
     );
+
+    // middle key
+    this.middleHDKey = hdKey.derive(Wallet.OriginPath);
+    if (
+      this.middleHDKey.chainCode === null ||
+      this.middleHDKey.publicKey == null
+    ) {
+      throw new Error("HDKey: middle must have chaincode and publickey");
+    }
+    this.middleKey = {
+      publicKey: Buffer.from(this.middleHDKey.publicKey),
+      chainCode: Buffer.from(this.middleHDKey.chainCode),
+      parentFingerprint: toBuffer(this.middleHDKey.parentFingerprint),
+      index: this.middleHDKey.index,
+      depth: this.middleHDKey.depth,
+    };
   }
 
-  getPrivateKeyByIndex(index: number): Buffer {
-    const fullPath = `${Wallet.DefaultBasePath}/${index}`;
-    return this.getPrivateKey(fullPath);
+  /**
+   * FullPath = OriginPath + ChildPath + wildcard
+   * We use a originPath to generate a middle public key to export
+   */
+  static FullPath = "M/89'/6'/4/20'/19/666/*/1024";
+  static OriginPath = "M/89'/6'/4/20'/19";
+  static ChildPath = "M/666/*/1024";
+
+  getDerivedPrivateKeyByIndex(index: number): Buffer {
+    const fullPath = Wallet.FullPath.replace("*", String(index));
+    return this.getDerivedPrivateKey(fullPath);
   }
 
-  getPrivateKey(path: string): Buffer {
+  getDerivedAddressByIndex(index: number): string {
+    const privateKey = this.getDerivedPrivateKeyByIndex(index);
+    return bufferToHex(privateToAddress(privateKey));
+  }
+
+  getDerivedPrivateKey(path: string): Buffer {
     let hdkey = this.hdKey.derive(path);
     if (hdkey.privateKey == null) {
       throw new Error("HDKey: can't get privateKey");
