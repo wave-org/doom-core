@@ -5,14 +5,10 @@ import {
 } from "ethereum-cryptography/bip39/index.js";
 import { wordlist } from "ethereum-cryptography/bip39/wordlists/english.js";
 import {
-  arrToBufArr,
   bufferToHex,
-  ecsign,
-  isValidPrivate,
   privateToPublic,
   publicToAddress,
   privateToAddress,
-  stripHexPrefix,
   toBuffer,
 } from "@ethereumjs/util";
 

@@ -1,8 +1,9 @@
+import { EVMWallet } from "../src/evm-wallet";
 import {
-  EVMWallet,
   RequestType,
   TransactionSignRequest,
-} from "../src/evm-wallet";
+  EIP1559TransactionSignRequest,
+} from "../src/request";
 import { Wallet } from "../src/wallet";
 
 describe("Wallet", function () {
@@ -82,6 +83,8 @@ describe("Wallet", function () {
       expect(transactionRequest.payload.to).toBe(
         "0x1167c0b3d645e271416cbffc93036d8e1150b745"
       );
+      expect(transactionRequest.payload.gasPrice.toString()).toBe("3000000000");
+      expect(transactionRequest.payload.gasLimit.toString()).toBe("21000");
     }
   });
 
@@ -111,6 +114,8 @@ describe("Wallet", function () {
       expect(transactionRequest.payload.to).toBe(
         "0x55d398326f99059ff775485246999027b3197955"
       );
+      expect(transactionRequest.payload.gasPrice.toString()).toBe("3000000000");
+      expect(transactionRequest.payload.gasLimit.toString()).toBe("44106");
     }
   });
 
@@ -132,12 +137,20 @@ describe("Wallet", function () {
       expect(request.chainID).toBe(1);
       expect(request.type).toBe(RequestType.transaction);
 
-      const transactionRequest = request as TransactionSignRequest;
+      const transactionRequest = request as EIP1559TransactionSignRequest;
       expect(transactionRequest.payload.nonce).toBe(0);
       expect(transactionRequest.payload.data).toBe("0x");
       expect(transactionRequest.payload.to).toBe(
         "0x1167c0b3d645e271416cbffc93036d8e1150b745"
       );
+
+      expect(transactionRequest.payload.maxPriorityFeePerGas.toString()).toBe(
+        "100000000"
+      );
+      expect(transactionRequest.payload.maxFeePerGas.toString()).toBe(
+        "15000000000"
+      );
+      expect(transactionRequest.payload.gasLimit.toString()).toBe("21000");
     }
   });
 
@@ -159,7 +172,7 @@ describe("Wallet", function () {
       expect(request.chainID).toBe(1);
       expect(request.type).toBe(RequestType.transaction);
 
-      const transactionRequest = request as TransactionSignRequest;
+      const transactionRequest = request as EIP1559TransactionSignRequest;
       expect(transactionRequest.payload.nonce).toBe(1);
       expect(transactionRequest.payload.data).toBe(
         "0x095ea7b30000000000000000000000003fc91a3afd70395cd496c647d5a6cc9d4b2b7fad00000000000000000000000000000000000000000000000000000002164bc900"
@@ -167,6 +180,14 @@ describe("Wallet", function () {
       expect(transactionRequest.payload.to).toBe(
         "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
       );
+
+      expect(transactionRequest.payload.maxPriorityFeePerGas.toString()).toBe(
+        "100000000"
+      );
+      expect(transactionRequest.payload.maxFeePerGas.toString()).toBe(
+        "15000000000"
+      );
+      expect(transactionRequest.payload.gasLimit.toString()).toBe("60424");
     }
   });
 });
