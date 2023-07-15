@@ -140,4 +140,33 @@ describe("Wallet", function () {
       );
     }
   });
+
+  it("ETH: sign contract transaction", async function () {
+    // https://etherscan.io/tx/0x1b7fab840a7e169fa8a01a787b12d3f93b6baac061c24e6277e2ed255cc22b44
+    const signRequestQRString =
+      "UR:ETH-SIGN-REQUEST/OLADTPDAGDUYTALKKSUEVSFDFPRENSADGSHTZCNERFAOHDJOAOYAJNADADLRAHYKVYAELPAXKBBYTBAELFWPAYMWNBROINMESWCLLUENSETTNTGEDMNNPFTOENAMWMFDLAROFYASHYOSQDAEAEAEAEAEAEAEAEAEAEAEAEFHSOCYFTZCJOESHHTYMTSWFLTLOLSFNTGRDNLBPMAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAOCMGRSOAERTAXAAAAADAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEIDUYROTA";
+
+    const expectedUR =
+      "ur:eth-signature/oeadtpdagduytalkksuevsfdfprensadgshtzcnerfaohdfpmsverowttbetheaxfzsfbwmowngugosasfldhysatkvedraapymstbrfykimrlhhimlaihhgcmdthsqzaddlfhqzhtplbyoyiejtoyaylkrdlpwzdmgyykltmwwdgydmaeeysnrfpk";
+    const wallet = new EVMWallet(Wallet.fromMnemonic(mnemonic, password));
+    const request = wallet.parseRequest(signRequestQRString);
+
+    expect(request).not.toBeNull();
+    if (request != null) {
+      const result = wallet.signRequest(request);
+      expect(result).toBe(expectedUR);
+      expect(request.address).toBe(address);
+      expect(request.chainID).toBe(1);
+      expect(request.type).toBe(RequestType.transaction);
+
+      const transactionRequest = request as TransactionSignRequest;
+      expect(transactionRequest.payload.nonce).toBe(1);
+      expect(transactionRequest.payload.data).toBe(
+        "0x095ea7b30000000000000000000000003fc91a3afd70395cd496c647d5a6cc9d4b2b7fad00000000000000000000000000000000000000000000000000000002164bc900"
+      );
+      expect(transactionRequest.payload.to).toBe(
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+      );
+    }
+  });
 });
