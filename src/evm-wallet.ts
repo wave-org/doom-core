@@ -15,9 +15,11 @@ import {
   bufferToHex,
   toBuffer,
   bufferToBigInt,
+  bigIntToBuffer,
   bigIntToUnpaddedBuffer,
   bufferToInt,
   arrToBufArr,
+  fromSigned,
   privateToPublic,
 } from "@ethereumjs/util";
 import { Common, Hardfork, Chain } from "@ethereumjs/common";
@@ -31,6 +33,7 @@ import {
 import {
   Transaction,
   TxData,
+  AccessList,
   FeeMarketEIP1559Transaction,
 } from "@ethereumjs/tx";
 export enum RequestType {
@@ -46,6 +49,8 @@ export interface SignRequest {
   address: string;
 
   payload: any;
+
+  sign(wallet: Wallet): ETHSignature;
 }
 
 export class MessageSignRequest implements SignRequest {
@@ -83,8 +88,9 @@ export class MessageSignRequest implements SignRequest {
     this.address = bufferToHex(_address);
 
     this.originData = request.getSignData();
-    // getDerivationPath = origin + children ;
-    // now origin == "" , so the real derivationPath = "m/"+getDerivationPath
+
+    // the derivationPath is OriginPath + ChildPath
+    // M is deleted by EthSignRequest
     this.derivationPath = "m/" + request.getDerivationPath();
 
     this.payload = this.originData.toString();
@@ -96,8 +102,7 @@ export class MessageSignRequest implements SignRequest {
       privateKey: derivedPrivateKey,
       data: this.originData,
     });
-    const rsv = Buffer.from(hexSig.substring(2), "hex");
-    return new ETHSignature(rsv, Buffer.from(this.id.substring(2), "hex"));
+    return new ETHSignature(toBuffer(hexSig), toBuffer(this.id));
   }
 }
 
@@ -119,11 +124,9 @@ export class TransactionSignRequest implements SignRequest {
   readonly address: string;
   readonly type = RequestType.transaction;
   readonly payload: TransactionDetail;
-  readonly supportEIP1559: boolean;
 
   private originData: Buffer;
-  private transaction: Transaction | null;
-  private eip1559Transaction: FeeMarketEIP1559Transaction | null;
+  readonly transaction: Transaction;
   private derivationPath: string;
   private common: Common;
 
@@ -153,69 +156,139 @@ export class TransactionSignRequest implements SignRequest {
     this.address = bufferToHex(_address);
 
     this.originData = request.getSignData();
-    // getDerivationPath = origin + children ;
-    // now origin == "" , so the real derivationPath = "m/"+getDerivationPath
+    // the derivationPath is OriginPath + ChildPath
+    // M is deleted by EthSignRequest
     this.derivationPath = "m/" + request.getDerivationPath();
 
     this.common = getCommonByChainID(this.chainID);
 
-    if (request.getDataType() === DataType.typedTransaction) {
-      this.supportEIP1559 = true;
-      // TODO
-      throw new Error("not implemented now TODO");
-    } else {
-      this.supportEIP1559 = false;
-      // handle payload
-      const values = arrToBufArr(RLP.decode(this.originData));
+    // handle payload
+    const values = arrToBufArr(RLP.decode(this.originData));
 
-      if (!Array.isArray(values)) {
-        throw new Error("Invalid serialized tx input. Must be array");
-      }
-      const [nonce, gasPrice, gasLimit, to, value, data] = values as [
-        Buffer,
-        Buffer,
-        Buffer,
-        Buffer,
-        Buffer,
-        Buffer
-      ];
-      // TODO
-      // const [nonce, gasPrice, gasLimit, to, value, data] = [
-      //   nonce_,
-      //   gasPrice_,
-      //   gasLimit_,
-      //   to_,
-      //   value_,
-      //   data_,
-      // ] as [Buffer, Buffer, Buffer, Buffer, Buffer, Buffer];
-      this.payload = {
-        nonce: bufferToInt(nonce),
-        gasPrice: bufferToBigInt(gasPrice),
-        gasLimit: bufferToBigInt(gasLimit),
-        to: bufferToHex(to),
-        value: bufferToBigInt(value),
-        data: bufferToHex(data),
-      };
-      this.transaction = new Transaction(
-        { nonce, gasPrice, gasLimit, to, value, data },
-        { common: this.common }
-      );
+    if (!Array.isArray(values)) {
+      throw new Error("Invalid serialized tx input. Must be array");
     }
+    const [nonce, gasPrice, gasLimit, to, value, data] = values as [
+      Buffer,
+      Buffer,
+      Buffer,
+      Buffer,
+      Buffer,
+      Buffer
+    ];
+    this.payload = {
+      nonce: bufferToInt(nonce),
+      gasPrice: bufferToBigInt(gasPrice),
+      gasLimit: bufferToBigInt(gasLimit),
+      to: bufferToHex(to),
+      value: bufferToBigInt(value),
+      data: bufferToHex(data),
+    };
+    this.transaction = new Transaction(
+      { nonce, gasPrice, gasLimit, to, value, data },
+      { common: this.common }
+    );
   }
 
   sign(wallet: Wallet) {
     const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
-    if (this.supportEIP1559) {
-      throw new Error("TODO");
-    } else {
-      const signed = this.transaction!.sign(derivedPrivateKey);
-      const rsv = Buffer.concat([
-        bigIntToUnpaddedBuffer(signed.r!),
-        bigIntToUnpaddedBuffer(signed.s!),
-        bigIntToUnpaddedBuffer(signed.v!),
-      ]);
-      return new ETHSignature(rsv, Buffer.from(this.id.substring(2), "hex"));
+
+    const signed = this.transaction.sign(derivedPrivateKey);
+    const rsv = concatSig(signed.r, signed.s, signed.v);
+    return new ETHSignature(rsv, toBuffer(this.id));
+  }
+}
+
+export type EIP1559TransactionDetail = {
+  nonce: number;
+  to: string;
+  value: bigint;
+  /**
+   * hex string
+   */
+  data: string;
+
+  accessList: AccessList;
+
+  maxPriorityFeePerGas: bigint;
+  maxFeePerGas: bigint;
+  gasLimit: bigint;
+};
+
+/**
+ * use for Ethereum
+ */
+export class EIP1559TransactionSignRequest implements SignRequest {
+  readonly id: string;
+  readonly chainID: number;
+  readonly address: string;
+  readonly type = RequestType.transaction;
+  readonly payload: EIP1559TransactionDetail;
+
+  private originData: Buffer;
+  readonly transaction: FeeMarketEIP1559Transaction;
+  private derivationPath: string;
+  private common: Common;
+
+  constructor(request: EthSignRequest) {
+    const _requestID = request.getRequestId();
+    if (_requestID === undefined) {
+      throw new Error(
+        "EthSignRequest: request.getRequestId() can not be undefined"
+      );
     }
+    this.id = bufferToHex(_requestID);
+
+    const _chainID = request.getChainId();
+    if (_chainID === undefined) {
+      throw new Error(
+        "EthSignRequest: request.getRequestId() can not be undefined"
+      );
+    }
+    this.chainID = _chainID;
+
+    const _address = request.getSignRequestAddress();
+    if (_address == undefined) {
+      throw new Error(
+        "EthSignRequest: request.getSignRequestAddress() can not be undefined"
+      );
+    }
+    this.address = bufferToHex(_address);
+
+    this.originData = request.getSignData();
+    // the derivationPath is OriginPath + ChildPath
+    // M is deleted by EthSignRequest
+    this.derivationPath = "m/" + request.getDerivationPath();
+
+    this.common = getCommonByChainID(this.chainID);
+
+    this.transaction = FeeMarketEIP1559Transaction.fromSerializedTx(
+      request.getSignData(),
+      { common: this.common }
+    );
+    this.payload = {
+      nonce: Number(this.transaction.nonce),
+      to: this.transaction.to!.toString(),
+      value: this.transaction.value,
+      /**
+       * hex string
+       */
+      data: bufferToHex(this.transaction.data),
+
+      accessList: this.transaction.AccessListJSON,
+
+      maxPriorityFeePerGas: this.transaction.maxPriorityFeePerGas,
+      maxFeePerGas: this.transaction.maxFeePerGas,
+      gasLimit: this.transaction.gasLimit,
+    };
+  }
+
+  sign(wallet: Wallet) {
+    const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
+
+    const signed = this.transaction.sign(derivedPrivateKey);
+    const rsv = concatSig(signed.r, signed.s, signed.v);
+    return new ETHSignature(rsv, toBuffer(this.id));
   }
 }
 
@@ -259,8 +332,8 @@ export class TypedDataSignRequest implements SignRequest {
     this.address = bufferToHex(_address);
 
     this.originData = request.getSignData();
-    // getDerivationPath = origin + children ;
-    // now origin == "" , so the real derivationPath = "m/"+getDerivationPath
+    // the derivationPath is OriginPath + ChildPath
+    // M is deleted by EthSignRequest
     this.derivationPath = "m/" + request.getDerivationPath();
 
     this.payload = JSON.parse(this.originData.toString()) as object;
@@ -274,8 +347,7 @@ export class TypedDataSignRequest implements SignRequest {
       data,
       version: this.typedDataVersion,
     });
-    const rsv = Buffer.from(hexSig.substring(2), "hex");
-    return new ETHSignature(rsv, Buffer.from(this.id.substring(2), "hex"));
+    return new ETHSignature(toBuffer(hexSig), toBuffer(this.id));
   }
 }
 
@@ -316,11 +388,12 @@ export class EVMWallet {
        */
       //   note: "",
     });
+
     const ur = cryptoHD.toUREncoder(10000).nextPart();
     return ur;
   }
 
-  parseRequest(urString: string) {
+  parseRequest(urString: string): SignRequest {
     const decoder = new URRegistryDecoder();
     decoder.receivePart(urString);
     if (decoder.isSuccess()) {
@@ -334,11 +407,10 @@ export class EVMWallet {
         return new MessageSignRequest(signRequest);
       } else if (signRequest.getDataType() === DataType.typedData) {
         return new TypedDataSignRequest(signRequest);
-      } else if (
-        signRequest.getDataType() === DataType.transaction ||
-        signRequest.getDataType() === DataType.typedTransaction
-      ) {
+      } else if (signRequest.getDataType() === DataType.transaction) {
         return new TransactionSignRequest(signRequest);
+      } else if (signRequest.getDataType() === DataType.typedTransaction) {
+        return new EIP1559TransactionSignRequest(signRequest);
       } else {
         throw new Error("never");
       }
@@ -348,85 +420,9 @@ export class EVMWallet {
   }
 
   signRequest(request: SignRequest) {
-    switch (request.type) {
-      case RequestType.personalMessage:
-        {
-          const detailRequest = request as MessageSignRequest;
-
-          const signature = detailRequest.sign(this.hdWallet);
-          return signature.toUREncoder(10000).nextPart();
-        }
-
-        break;
-      case RequestType.typedData: {
-        const detailRequest = request as TypedDataSignRequest;
-
-        const signature = detailRequest.sign(this.hdWallet);
-        return signature.toUREncoder(10000).nextPart();
-      }
-
-      case RequestType.transaction:
-        {
-          const detailRequest = request as TransactionSignRequest;
-
-          const signature = detailRequest.sign(this.hdWallet);
-          return signature.toUREncoder(10000).nextPart();
-        }
-        break;
-    }
+    const signature = request.sign(this.hdWallet);
+    return signature.toUREncoder(10000).nextPart();
   }
-
-  //   signTransaction() {
-  //     const values = arrToBufArr(RLP.decode(signRequest.getSignData()));
-
-  //       if (!Array.isArray(values)) {
-  //         throw new Error("Invalid serialized tx input. Must be array");
-  //       }
-  //       const [nonce, gasPrice, gasLimit, to, value, data, v, r, s] = values;
-  //       let txData = { nonce, gasPrice, gasLimit, to, value, data };
-  //       // TODO test v r s in ETH. but not eth is using EIP1559.
-  //       // TODO support to import solidity or abi to get the function name and params.
-
-  //       const parsedTxData = {
-  //         nonce: bufferToInt(txData.nonce),
-  //         gasPrice: bufferToBigInt(txData.gasPrice),
-  //         gasLimit: bufferToBigInt(txData.gasLimit),
-  //         to: bufferToHex(txData.to),
-  //         value: bufferToBigInt(txData.value),
-  //         data: bufferToHex(txData.data),
-  //       };
-  //       console.log(parsedTxData);
-  //       const unsignedTx = new Transaction(txData, { common });
-  //       // let tx = Transaction.fromSerializedTx(signRequest.getSignData(), {common})
-
-  //       // console.log(`v: ${tx.v}`)
-  //       // console.log(`this. signed: ${tx.isSigned()}`)
-  //       console.log(
-  //         `this.support EIP155 ${unsignedTx.supports(
-  //           Capability.EIP155ReplayProtection
-  //         )}`
-  //       );
-
-  //       let signed = unsignedTx.sign(
-  //         Buffer.from(key.privateKey.substring(2), "hex")
-  //       );
-  //       // console.log(signed)
-  //       // console.log(`signed.support EIP155 ${signed.supports(Capability.EIP155ReplayProtection)}`)
-
-  //       // let rsv = r + s + v
-  //       rsv = Buffer.concat([
-  //         bigIntToUnpaddedBuffer(signed.r),
-  //         bigIntToUnpaddedBuffer(signed.s),
-  //         bigIntToUnpaddedBuffer(signed.v),
-  //       ]);
-  //   }
-  signMessage(message: string) {}
-
-  /**
-   * Only support TypeData V4.
-   * TODO test v3 data
-   */
-  signTypedData() {}
 
   /**
    * get child path from DefaultBasePath by adding a wildcard at the end
@@ -458,7 +454,7 @@ export class EVMWallet {
   }
 }
 
-function getCommonByChainID(chainID: number) {
+export function getCommonByChainID(chainID: number) {
   if (chainID == 1) {
     return new Common({ chain: Chain.Mainnet });
   } else if (chainID == 56) {
@@ -467,14 +463,31 @@ function getCommonByChainID(chainID: number) {
       name: "BNB Smart Chain",
       chainId: chainID,
       networkId: chainID,
-      //   hardfork: Hardfork.London,
     });
   } else {
     return Common.custom({
       name: "Custom Chain",
       chainId: chainID,
       networkId: chainID,
-      //   hardfork: Hardfork.London,
     });
+  }
+}
+
+function concatSig(r?: bigint, s?: bigint, v?: bigint): Buffer {
+  if (r === undefined || s === undefined || v === undefined) {
+    throw new Error("transaction.sign failed!! can not get r,s,v");
+  }
+
+  const rStr = padWithZeroes(bigIntToBuffer(r).toString("hex"), 64);
+  const sStr = padWithZeroes(bigIntToBuffer(s).toString("hex"), 64);
+  const vStr = padWithZeroes(bigIntToBuffer(v).toString("hex"), 2);
+  return Buffer.from(rStr + sStr + vStr, "hex");
+}
+
+function padWithZeroes(hexString: string, targetLength: number): string {
+  if (targetLength > hexString.length) {
+    return String.prototype.padStart.call(hexString, targetLength, "0");
+  } else {
+    return hexString;
   }
 }

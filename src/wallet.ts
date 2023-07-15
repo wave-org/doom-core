@@ -91,6 +91,7 @@ export class Wallet {
   static FullPath = "M/89'/6'/4/20'/19/666/*/1024";
   static OriginPath = "M/89'/6'/4/20'/19";
   static ChildPath = "M/666/*/1024";
+  static MAX_INDEX = 1000;
 
   getDerivedPrivateKeyByIndex(index: number): Buffer {
     const fullPath = Wallet.FullPath.replace("*", String(index));
@@ -98,6 +99,9 @@ export class Wallet {
   }
 
   getDerivedAddressByIndex(index: number): string {
+    if (index > Wallet.MAX_INDEX) {
+      throw new Error("index can't be larger than 1000");
+    }
     const privateKey = this.getDerivedPrivateKeyByIndex(index);
     return bufferToHex(privateToAddress(privateKey));
   }
@@ -108,5 +112,16 @@ export class Wallet {
       throw new Error("HDKey: can't get privateKey");
     }
     return Buffer.from(hdkey.privateKey);
+  }
+
+  getPathFromAddress(addr: string): string {
+    const address = addr.toLowerCase();
+    for (let i = 0; i < Wallet.MAX_INDEX; i++) {
+      const address_ = this.getDerivedAddressByIndex(i);
+      if (address_ === address) {
+        return Wallet.FullPath.replace("*", String(i));
+      }
+    }
+    throw new Error("can not find address path");
   }
 }
