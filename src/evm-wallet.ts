@@ -4,8 +4,8 @@ import {
   PathComponent,
   CryptoKeypath,
 } from "@keystonehq/bc-ur-registry";
-import { bufferToHex, privateToAddress } from "ethereumjs-util";
-import { EthSignRequest } from "@keystonehq/bc-ur-registry-eth";
+import { bytesToHex, privateToAddress } from "@doomjs/ethereumjs-util";
+import { EthSignRequest } from "@doomjs/keystonehq-bc-ur-registry-eth";
 import { URRegistryDecoder } from "@keystonehq/ur-decoder";
 
 import { SignRequest, parseEthSignRequest } from "./request";
@@ -102,6 +102,6 @@ export class EVMWallet {
 
   public getDerivedAddressByIndex(index: number): string {
     const privateKey = this.hdKey.getDerivedPrivateKeyByIndex(index);
-    return bufferToHex(privateToAddress(privateKey));
+    return bytesToHex(privateToAddress(privateKey));
   }
 }

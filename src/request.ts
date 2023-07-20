@@ -1,30 +1,29 @@
 import {
-  bufferToHex,
-  toBuffer,
-  bufferToBigInt,
-  bigIntToBuffer,
-  bufferToInt,
-  arrToBufArr,
-} from "@ethereumjs/util";
-import { Common, Hardfork, Chain } from "@ethereumjs/common";
-import { RLP } from "@ethereumjs/rlp";
+  bytesToHex,
+  toBytes,
+  bytesToBigInt,
+  bigIntToBytes,
+  bytesToInt,
+} from "@doomjs/ethereumjs-util";
+import { Common, Hardfork, Chain } from "@doomjs/ethereumjs-common";
+import { RLP, NestedUint8Array } from "@doomjs/ethereumjs-rlp";
 import { Key } from "./key";
 import { getCommonByChainID } from "./common";
 import {
   EthSignRequest,
   ETHSignature,
   DataType,
-} from "@keystonehq/bc-ur-registry-eth";
+} from "@doomjs/keystonehq-bc-ur-registry-eth";
 import {
   personalSign,
   SignTypedDataVersion,
   signTypedData,
-} from "@metamask/eth-sig-util";
+} from "@doomjs/metamask-eth-sig-util";
 import {
-  Transaction,
+  LegacyTransaction,
   AccessList,
   FeeMarketEIP1559Transaction,
-} from "@ethereumjs/tx";
+} from "@doomjs/ethereumjs-tx";
 
 export enum RequestType {
   transaction = 1,
@@ -59,7 +58,7 @@ class BaseSignRequest implements SignRequest {
         "EthSignRequest: request.getRequestId() can not be undefined"
       );
     }
-    this.id = bufferToHex(_requestID);
+    this.id = bytesToHex(_requestID);
 
     const _chainID = request.getChainId();
     if (_chainID === undefined) {
@@ -74,7 +73,7 @@ class BaseSignRequest implements SignRequest {
         "EthSignRequest: request.getSignRequestAddress() can not be undefined"
       );
     }
-    this.address = bufferToHex(_address);
+    this.address = bytesToHex(_address);
 
     this.originData = request.getSignData();
 
@@ -105,7 +104,10 @@ export class MessageSignRequest extends BaseSignRequest {
       privateKey: derivedPrivateKey,
       data: this.originData,
     });
-    return new ETHSignature(toBuffer(hexSig), toBuffer(this.id));
+    return new ETHSignature(
+      Buffer.from(toBytes(hexSig)),
+      Buffer.from(toBytes(this.id))
+    );
   }
 }
 
@@ -133,7 +135,10 @@ export class TypedDataSignRequest extends BaseSignRequest {
       data,
       version: this.typedDataVersion,
     });
-    return new ETHSignature(toBuffer(hexSig), toBuffer(this.id));
+    return new ETHSignature(
+      Buffer.from(toBytes(hexSig)),
+      Buffer.from(toBytes(this.id))
+    );
   }
 }
 
@@ -154,7 +159,7 @@ export class TransactionSignRequest extends BaseSignRequest {
   readonly type = RequestType.transaction;
   readonly payload: TransactionDetail;
 
-  readonly transaction: Transaction;
+  readonly transaction: LegacyTransaction;
   private common: Common;
 
   constructor(request: EthSignRequest) {
@@ -169,28 +174,28 @@ export class TransactionSignRequest extends BaseSignRequest {
     this.common = getCommonByChainID(this.chainID);
 
     // handle payload
-    const values = arrToBufArr(RLP.decode(this.originData));
+    const values = RLP.decode(this.originData);
 
     if (!Array.isArray(values)) {
       throw new Error("Invalid serialized tx input. Must be array");
     }
     const [nonce, gasPrice, gasLimit, to, value, data] = values as [
-      Buffer,
-      Buffer,
-      Buffer,
-      Buffer,
-      Buffer,
-      Buffer
+      Uint8Array,
+      Uint8Array,
+      Uint8Array,
+      Uint8Array,
+      Uint8Array,
+      Uint8Array
     ];
     this.payload = {
-      nonce: bufferToInt(nonce),
-      gasPrice: bufferToBigInt(gasPrice),
-      gasLimit: bufferToBigInt(gasLimit),
-      to: bufferToHex(to),
-      value: bufferToBigInt(value),
-      data: bufferToHex(data),
+      nonce: bytesToInt(nonce),
+      gasPrice: bytesToBigInt(gasPrice),
+      gasLimit: bytesToBigInt(gasLimit),
+      to: bytesToHex(to),
+      value: bytesToBigInt(value),
+      data: bytesToHex(data),
     };
-    this.transaction = new Transaction(
+    this.transaction = new LegacyTransaction(
       { nonce, gasPrice, gasLimit, to, value, data },
       { common: this.common }
     );
@@ -201,7 +206,7 @@ export class TransactionSignRequest extends BaseSignRequest {
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);
-    return new ETHSignature(rsv, toBuffer(this.id));
+    return new ETHSignature(rsv, Buffer.from(toBytes(this.id)));
   }
 }
 
@@ -251,7 +256,7 @@ export class EIP1559TransactionSignRequest extends BaseSignRequest {
       /**
        * hex string
        */
-      data: bufferToHex(this.transaction.data),
+      data: bytesToHex(this.transaction.data),
 
       accessList: this.transaction.AccessListJSON,
 
@@ -266,7 +271,7 @@ export class EIP1559TransactionSignRequest extends BaseSignRequest {
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);
-    return new ETHSignature(rsv, toBuffer(this.id));
+    return new ETHSignature(rsv, Buffer.from(toBytes(this.id)));
   }
 }
 
@@ -289,9 +294,9 @@ export function concatSig(r?: bigint, s?: bigint, v?: bigint): Buffer {
     throw new Error("transaction.sign failed!! can not get r,s,v");
   }
 
-  const rStr = padWithZeroes(bigIntToBuffer(r).toString("hex"), 64);
-  const sStr = padWithZeroes(bigIntToBuffer(s).toString("hex"), 64);
-  const vStr = padWithZeroes(bigIntToBuffer(v).toString("hex"), 2);
+  const rStr = padWithZeroes(Buffer.from(bigIntToBytes(r)).toString("hex"), 64);
+  const sStr = padWithZeroes(Buffer.from(bigIntToBytes(s)).toString("hex"), 64);
+  const vStr = padWithZeroes(Buffer.from(bigIntToBytes(v)).toString("hex"), 2);
   return Buffer.from(rStr + sStr + vStr, "hex");
 }
 

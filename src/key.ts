@@ -5,11 +5,11 @@ import {
 } from "ethereum-cryptography/bip39/index.js";
 import { wordlist } from "ethereum-cryptography/bip39/wordlists/english.js";
 import {
-  bufferToHex,
+  bytesToHex,
   privateToPublic,
   publicToAddress,
-  toBuffer,
-} from "ethereumjs-util";
+  toBytes,
+} from "@doomjs/ethereumjs-util";
 
 type MiddleKey = {
   publicKey: Buffer;
@@ -53,12 +53,10 @@ export class Key {
     if (hdKey.privateKey == null || hdKey.chainCode == null) {
       throw new Error("HDKey: expected with privateKey");
     }
-    this.privateKey = bufferToHex(Buffer.from(hdKey.privateKey));
-    this.chainCode = bufferToHex(Buffer.from(hdKey.chainCode));
-    this.publicKey = bufferToHex(
-      privateToPublic(Buffer.from(hdKey.privateKey))
-    );
-    this.address = bufferToHex(
+    this.privateKey = bytesToHex(hdKey.privateKey);
+    this.chainCode = bytesToHex(hdKey.chainCode);
+    this.publicKey = bytesToHex(privateToPublic(hdKey.privateKey));
+    this.address = bytesToHex(
       publicToAddress(privateToPublic(Buffer.from(hdKey.privateKey)))
     );
 
@@ -73,7 +71,9 @@ export class Key {
     this.middleKey = {
       publicKey: Buffer.from(this.middleHDKey.publicKey),
       chainCode: Buffer.from(this.middleHDKey.chainCode),
-      parentFingerprint: toBuffer(this.middleHDKey.parentFingerprint),
+      parentFingerprint: Buffer.from(
+        toBytes(this.middleHDKey.parentFingerprint)
+      ),
       index: this.middleHDKey.index,
       depth: this.middleHDKey.depth,
     };

@@ -1,4 +1,4 @@
-import { Common, Chain } from "@ethereumjs/common";
+import { Common, Chain } from "@doomjs/ethereumjs-common";
 
 export function getCommonByChainID(chainID: number) {
   if (chainID == 1) {
