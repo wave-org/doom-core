@@ -8,7 +8,7 @@ import {
 } from "@ethereumjs/util";
 import { Common, Hardfork, Chain } from "@ethereumjs/common";
 import { RLP } from "@ethereumjs/rlp";
-import { Wallet } from "./wallet";
+import { Key } from "./key";
 import { getCommonByChainID } from "./common";
 import {
   EthSignRequest,
@@ -40,7 +40,7 @@ export interface SignRequest {
 
   payload: any;
 
-  sign(wallet: Wallet): ETHSignature;
+  sign(key: Key): ETHSignature;
 }
 
 class BaseSignRequest implements SignRequest {
@@ -83,7 +83,7 @@ class BaseSignRequest implements SignRequest {
     this.derivationPath = "m/" + request.getDerivationPath();
   }
 
-  sign(wallet: Wallet): ETHSignature {
+  sign(key: Key): ETHSignature {
     throw new Error("");
   }
 }
@@ -99,8 +99,8 @@ export class MessageSignRequest extends BaseSignRequest {
     this.payload = this.originData.toString();
   }
 
-  sign(wallet: Wallet) {
-    const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
+  sign(key: Key) {
+    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
     let hexSig = personalSign({
       privateKey: derivedPrivateKey,
       data: this.originData,
@@ -125,8 +125,8 @@ export class TypedDataSignRequest extends BaseSignRequest {
     this.payload = JSON.parse(this.originData.toString()) as object;
   }
 
-  sign(wallet: Wallet) {
-    const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
+  sign(key: Key) {
+    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
     const data = JSON.parse(this.originData.toString());
     let hexSig = signTypedData({
       privateKey: derivedPrivateKey,
@@ -196,8 +196,8 @@ export class TransactionSignRequest extends BaseSignRequest {
     );
   }
 
-  sign(wallet: Wallet) {
-    const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
+  sign(key: Key) {
+    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);
@@ -261,8 +261,8 @@ export class EIP1559TransactionSignRequest extends BaseSignRequest {
     };
   }
 
-  sign(wallet: Wallet) {
-    const derivedPrivateKey = wallet.getDerivedPrivateKey(this.derivationPath);
+  sign(key: Key) {
+    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);

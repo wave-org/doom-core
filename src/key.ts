@@ -8,9 +8,8 @@ import {
   bufferToHex,
   privateToPublic,
   publicToAddress,
-  privateToAddress,
   toBuffer,
-} from "@ethereumjs/util";
+} from "ethereumjs-util";
 
 type MiddleKey = {
   publicKey: Buffer;
@@ -20,7 +19,7 @@ type MiddleKey = {
   depth: number;
 };
 
-export class Wallet {
+export class Key {
   readonly privateKey: string;
   readonly chainCode: string;
   readonly publicKey: string;
@@ -33,19 +32,19 @@ export class Wallet {
   static fromMnemonic(mnemonic: string, password: string) {
     let seed = mnemonicToSeedSync(mnemonic, password);
     let hdKey = HDKey.fromMasterSeed(seed);
-    return new Wallet(hdKey, mnemonic);
+    return new Key(hdKey, mnemonic);
   }
 
   static fromRandomMnemonic(password: string) {
     let mnemonic = generateMnemonic(wordlist, 256);
     let seed = mnemonicToSeedSync(mnemonic, password);
     let hdKey = HDKey.fromMasterSeed(seed);
-    return new Wallet(hdKey, mnemonic);
+    return new Key(hdKey, mnemonic);
   }
 
   static fromExtendedKey(base58key: string) {
     let hdKey = HDKey.fromExtendedKey(base58key);
-    return new Wallet(hdKey, null);
+    return new Key(hdKey, null);
   }
 
   constructor(hdKey: HDKey, mnemonic: string | null) {
@@ -64,7 +63,7 @@ export class Wallet {
     );
 
     // middle key
-    this.middleHDKey = hdKey.derive(Wallet.OriginPath);
+    this.middleHDKey = hdKey.derive(Key.OriginPath);
     if (
       this.middleHDKey.chainCode === null ||
       this.middleHDKey.publicKey == null
@@ -90,16 +89,11 @@ export class Wallet {
   static MAX_INDEX = 1000;
 
   getDerivedPrivateKeyByIndex(index: number): Buffer {
-    const fullPath = Wallet.FullPath.replace("*", String(index));
-    return this.getDerivedPrivateKey(fullPath);
-  }
-
-  getDerivedAddressByIndex(index: number): string {
-    if (index > Wallet.MAX_INDEX) {
+    if (index > Key.MAX_INDEX) {
       throw new Error("index can't be larger than 1000");
     }
-    const privateKey = this.getDerivedPrivateKeyByIndex(index);
-    return bufferToHex(privateToAddress(privateKey));
+    const fullPath = Key.FullPath.replace("*", String(index));
+    return this.getDerivedPrivateKey(fullPath);
   }
 
   getDerivedPrivateKey(path: string): Buffer {
@@ -108,16 +102,5 @@ export class Wallet {
       throw new Error("HDKey: can't get privateKey");
     }
     return Buffer.from(hdkey.privateKey);
-  }
-
-  getPathFromAddress(addr: string): string {
-    const address = addr.toLowerCase();
-    for (let i = 0; i < Wallet.MAX_INDEX; i++) {
-      const address_ = this.getDerivedAddressByIndex(i);
-      if (address_ === address) {
-        return Wallet.FullPath.replace("*", String(i));
-      }
-    }
-    throw new Error("can not find address path");
   }
 }

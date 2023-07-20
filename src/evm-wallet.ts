@@ -1,20 +1,21 @@
-import { Wallet } from "./wallet";
+import { Key } from "./key";
 import {
   CryptoHDKey,
   PathComponent,
   CryptoKeypath,
 } from "@keystonehq/bc-ur-registry";
+import { bufferToHex, privateToAddress } from "ethereumjs-util";
 import { EthSignRequest } from "@keystonehq/bc-ur-registry-eth";
 import { URRegistryDecoder } from "@keystonehq/ur-decoder";
 
 import { SignRequest, parseEthSignRequest } from "./request";
 
 export class EVMWallet {
-  readonly hdWallet: Wallet;
+  readonly hdKey: Key;
   readonly compressedPublicKey: string;
   name: string;
-  constructor(wallet: Wallet, name = "DOOM Wallet ") {
-    this.hdWallet = wallet;
+  constructor(key: Key, name = "DOOM Wallet ") {
+    this.hdKey = key;
     this.name = name;
   }
 
@@ -23,19 +24,17 @@ export class EVMWallet {
    * (Uniform Resource, https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2020-006-urtypes.md)
    */
   getConnectionUR() {
-    let childrenPath = new CryptoKeypath(
-      this.getPathComponents(Wallet.ChildPath)
-    );
-    let originComponents = this.getPathComponents(Wallet.OriginPath);
+    let childrenPath = new CryptoKeypath(this.getPathComponents(Key.ChildPath));
+    let originComponents = this.getPathComponents(Key.OriginPath);
     let cryptoHD = new CryptoHDKey({
       isMaster: false,
       isPrivateKey: false,
-      key: this.hdWallet.middleKey.publicKey,
-      chainCode: this.hdWallet.middleKey.chainCode,
+      key: this.hdKey.middleKey.publicKey,
+      chainCode: this.hdKey.middleKey.chainCode,
       origin: new CryptoKeypath(
         originComponents,
-        this.hdWallet.middleKey.parentFingerprint,
-        this.hdWallet.middleKey.depth
+        this.hdKey.middleKey.parentFingerprint,
+        this.hdKey.middleKey.depth
       ),
       children: childrenPath,
       name: this.name,
@@ -68,7 +67,7 @@ export class EVMWallet {
   }
 
   signRequest(request: SignRequest) {
-    const signature = request.sign(this.hdWallet);
+    const signature = request.sign(this.hdKey);
     return signature.toUREncoder(10000).nextPart();
   }
 
@@ -99,5 +98,10 @@ export class EVMWallet {
       }
     });
     return componenets;
+  }
+
+  public getDerivedAddressByIndex(index: number): string {
+    const privateKey = this.hdKey.getDerivedPrivateKeyByIndex(index);
+    return bufferToHex(privateToAddress(privateKey));
   }
 }

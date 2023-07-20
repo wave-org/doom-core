@@ -1,6 +1,6 @@
 {
   "name": "doom-wallet-core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Core functions to manage key, cbor and sign transactions.",
   "keywords": [
     "ethereum",
@@ -36,13 +36,13 @@
     "@ethereumjs/common": "^3.2.0",
     "@ethereumjs/rlp": "^4.0.1",
     "@ethereumjs/tx": "^4.2.0",
-    "@ethereumjs/util": "^8.0.5",
     "@keystonehq/bc-ur-registry": "^0.5.5",
     "@keystonehq/bc-ur-registry-eth": "^0.19.1",
     "@keystonehq/ur-decoder": "^0.12.2",
     "@metamask/eth-sig-util": "^6.0.0",
     "@noble/curves": "^1.1.0",
-    "ethereum-cryptography": "^2.1.1"
+    "ethereum-cryptography": "^2.1.1",
+    "ethereumjs-util": "^7.1.5"
   },
   "devDependencies": {
     "@types/bn.js": "^4.11.6",
