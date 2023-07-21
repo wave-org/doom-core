@@ -6,7 +6,7 @@ import {
 } from "@keystonehq/bc-ur-registry";
 import { bytesToHex, privateToAddress } from "@doomjs/ethereumjs-util";
 import { EthSignRequest } from "@doomjs/keystonehq-bc-ur-registry-eth";
-import { URRegistryDecoder } from "@keystonehq/ur-decoder";
+import { URRegistryDecoder } from "@doomjs/keystonehq-ur-decoder";
 
 import { SignRequest, parseEthSignRequest } from "./request";
 
