@@ -31,4 +31,20 @@ describe("Key", function () {
     expect(wallet.address).toBe("0x40fdf02df1bd7104441b17b2c629c2d339dab655");
     expect(wallet.mnemonic).toBeNull();
   });
+
+  it("generate a random mnemonic", async function () {
+    const result = Key.generateRandomMnemonic();
+    expect(result.split(" ")).toHaveLength(24);
+    expect(result).not.toBe(
+      "stamp evoke width vapor almost vault debate excuse enhance junior violin sign wise blame tornado load clerk orphan learn bullet alter acoustic region mango"
+    );
+  });
+
+  it("generate a mnemonic by hash string", async function () {
+    const result = Key.generateMenoicByHashString("test");
+    expect(result.split(" ")).toHaveLength(24);
+    expect(result).toBe(
+      "supply poet damage retreat wish debate crunch two silent purpose lobster tortoise favorite mask want prosper clap video scheme label bulk soup comic park"
+    );
+  });
 });

@@ -2,7 +2,9 @@ import { HDKey } from "ethereum-cryptography/hdkey.js";
 import {
   generateMnemonic,
   mnemonicToSeedSync,
+  entropyToMnemonic,
 } from "ethereum-cryptography/bip39/index.js";
+import { sha512_256 } from "@noble/hashes/sha512";
 import { wordlist } from "ethereum-cryptography/bip39/wordlists/english.js";
 import {
   bytesToHex,
@@ -33,6 +35,16 @@ export class Key {
     let seed = mnemonicToSeedSync(mnemonic, password);
     let hdKey = HDKey.fromMasterSeed(seed);
     return new Key(hdKey, mnemonic);
+  }
+
+  /// 256 bits
+  static generateRandomMnemonic() {
+    return generateMnemonic(wordlist, 256);
+  }
+
+  static generateMenoicByHashString(givenStr: string) {
+    const entropy = sha512_256(givenStr + "doom salt string");
+    return entropyToMnemonic(entropy, wordlist);
   }
 
   static fromRandomMnemonic(password: string) {
