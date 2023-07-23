@@ -47,6 +47,12 @@ export class Key {
     return entropyToMnemonic(entropy, wordlist);
   }
 
+  /// 256 bits hash hex string
+  static hashPassword(password: string) {
+    const entropy = sha512_256(password + "doom salt string");
+    return bytesToHex(entropy);
+  }
+
   static fromRandomMnemonic(password: string) {
     let mnemonic = generateMnemonic(wordlist, 256);
     let seed = mnemonicToSeedSync(mnemonic, password);

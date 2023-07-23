@@ -47,4 +47,11 @@ describe("Key", function () {
       "supply poet damage retreat wish debate crunch two silent purpose lobster tortoise favorite mask want prosper clap video scheme label bulk soup comic park"
     );
   });
+
+  it("hash password", async function () {
+    const result = Key.hashPassword(password);
+    expect(result).toBe(
+      "0xa3547f7fa65980d4fe135ab6c017f8285c4f686b0e26f7c18323287ebe96350c"
+    );
+  });
 });
