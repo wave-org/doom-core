@@ -38,7 +38,7 @@ export interface SignRequest {
   address: string;
 
   payload: any;
-
+  derivationPath: string;
   sign(key: Key): ETHSignature;
 }
 
@@ -47,8 +47,8 @@ class BaseSignRequest implements SignRequest {
   readonly chainID: number | null;
   readonly address: string;
   readonly type: RequestType;
+  readonly derivationPath: string;
   protected originData: Buffer;
-  protected derivationPath: string;
 
   readonly payload: any;
   constructor(request: EthSignRequest) {
