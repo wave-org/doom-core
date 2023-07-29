@@ -6,7 +6,7 @@ import {
 } from "@keystonehq/bc-ur-registry";
 import { bytesToHex, privateToAddress } from "@doomjs/ethereumjs-util";
 import { EthSignRequest } from "@doomjs/keystonehq-bc-ur-registry-eth";
-import { URRegistryDecoder } from "@doomjs/keystonehq-ur-decoder";
+import { UR } from "@ngraveio/bc-ur";
 
 import { SignRequest, parseEthSignRequest } from "./request";
 
@@ -50,20 +50,12 @@ export class EVMWallet {
     return ur;
   }
 
-  parseRequest(urString: string): SignRequest {
-    const decoder = new URRegistryDecoder();
-    decoder.receivePart(urString);
-    if (decoder.isSuccess()) {
-      const ur = decoder.resultUR();
-      if (ur.type !== "eth-sign-request") {
-        throw new Error("ur.type !== eth-sign-request");
-      }
-      const signRequest = EthSignRequest.fromCBOR(ur.cbor);
-
-      return parseEthSignRequest(signRequest);
-    } else {
-      throw new Error("URRegistryDecoder error: " + decoder.resultError());
+  parseRequest(ur: UR): SignRequest {
+    if (ur.type !== "eth-sign-request") {
+      throw new Error("ur.type !== eth-sign-request");
     }
+    const signRequest = EthSignRequest.fromCBOR(ur.cbor);
+    return parseEthSignRequest(signRequest);
   }
 
   signRequest(request: SignRequest) {

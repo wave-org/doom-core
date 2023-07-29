@@ -4,6 +4,7 @@ import {
   TransactionSignRequest,
   EIP1559TransactionSignRequest,
 } from "../src/request";
+import { URRegistryDecoder } from "@doomjs/keystonehq-ur-decoder";
 import { Key } from "../src/key";
 
 describe("EVM Wallet", function () {
@@ -51,11 +52,19 @@ describe("EVM Wallet", function () {
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/ONADTPDAGDHTCTRKYKHDCEFYATMHMWSPWZMWMDWFTYAOHDCTFEKSHSJNJOJZIHCXHNJOIHJPJKJLJTHSJZHEJKINIOJTHNCXJNIHJKJKHSIOIHAXAXAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEFXAXLYPD";
 
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
+
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
+
     const expectedUR =
       "ur:eth-signature/oeadtpdagdhtctrkykhdcefyatmhmwspwzmwmdwftyaohdfpzmfrehnnjerttnwdvdcxrhhhfwcslurkvdgmgymuaykoeeaagttkjtcxvdvebthljyjsasamztvlktpmeoasdavlimtshnferowfgsbbostacklpayynmeisdsjzlrcacwqzmeltmd";
 
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
@@ -70,12 +79,18 @@ describe("EVM Wallet", function () {
   it("ETH: sign typed data v4", async function () {
     const signRequestQRString =
       "ur:eth-sign-request/onadtpdagdjegddrhgftcefdjlpffwlbhfiaknuodiaohkaxnlkgcpiejljnhsinjtcpftkgcpiaishsinjtgaiecpftcpehcpdwcpjthsjnihcpftcpfejyisihjpcxgthsinjzcpdwcpkoihjpiniykkinjtiofxjljtjyjphsiajycpftcpdyksfxiafxfxiaiaiaiafxfxfxfxiafxfxfxfxfxfxiafxiafxiaiafxiafxfxfxiafxiaiaiaiaiaiaiafxcpdwcpkoihjpjkinjljtcpftcpehcpkidwcpjnihjkjkhsioihcpftkgcpiajljtjyihjtjyjkcpftcpfdihjzjzjldwcxfwjlidclcpdwcpiyjpjljncpftkgcpjthsjnihcpftcpfxjlktcpdwcpkthsjzjzihjyjkcpfthpcpdyksfxfyeyhseoieesfgeseoetfeeheofxfyeseeemfeiadyecfpidfxemfgfeemeoeefyiyetfyfyeteyencpdwcpdyksfyihhsfyidihihiyiefefpieidihihiyiefehsieidfefefgieihhsieidihfefgiefehsfyidihihfgcphlkidwcpjyjlcpfthpkgcpjthsjnihcpftcpfwjlidcpdwcpkthsjzjzihjyjkcpfthpcpdyksidfwidfwfwfwfwididfwfwfwidididfwididfwididididfwfwidfwididididfwidfwididfwfwidfwcpdwcpdyksfwdyfwiehsfwihhsecemfwdyfwfyfpfwihfpecemiddyidiefpfwfefpecemiddyfwfyhsidfehsecemcpdwcpdyksfwdyfwdyiddyiddyiddyiddyfwdydydydydydydydydydydydydydydydydydydydydydydydydydydycphlkihlkidwcpjojpinjnhsjpkkghkkjoihcpftcpgthsinjzcpdwcpjykkjoihjkcpftkgcpfegagdemeheyfyjljnhsinjtcpfthpkgcpjthsjnihcpftcpjthsjnihcpdwcpjykkjoihcpftcpjkjyjpinjtiocpkidwkgcpjthsjnihcpftcpkoihjpjkinjljtcpdwcpjykkjoihcpftcpjkjyjpinjtiocpkidwkgcpjthsjnihcpftcpiaishsinjtgaiecpdwcpjykkjoihcpftcpkpinjtjyeyecencpkidwkgcpjthsjnihcpftcpkoihjpiniykkinjtiofxjljtjyjphsiajycpdwcpjykkjoihcpftcphsieiejpihjkjkcpkihldwcpfljpjlkpjocpfthpkgcpjthsjnihcpftcpjthsjnihcpdwcpjykkjoihcpftcpjkjyjpinjtiocpkidwkgcpjthsjnihcpftcpjnihjnidihjpjkcpdwcpjykkjoihcpftcpgdihjpjkjljthphlcpkihldwcpgthsinjzcpfthpkgcpjthsjnihcpftcpiyjpjljncpdwcpjykkjoihcpftcpgdihjpjkjljtcpkidwkgcpjthsjnihcpftcpjyjlcpdwcpjykkjoihcpftcpgdihjpjkjljthphlcpkidwkgcpjthsjnihcpftcpiajljtjyihjtjyjkcpdwcpjykkjoihcpftcpjkjyjpinjtiocpkihldwcpgdihjpjkjljtcpfthpkgcpjthsjnihcpftcpjthsjnihcpdwcpjykkjoihcpftcpjkjyjpinjtiocpkidwkgcpjthsjnihcpftcpkthsjzjzihjyjkcpdwcpjykkjoihcpftcphsieiejpihjkjkhphlcpkihlkikiaxaoahtaaddyoeadmhcshkykamykaawkbbykbwwkcfaonywkaewkcfaaaewkaocyfdosploxamghbyiortqdtbfevojsfpjzrsztmuaxjnmnbygdrlfeiyrnmsjo";
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
 
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
     const expectedUR =
       "ur:eth-signature/oeadtpdagdjegddrhgftcefdjlpffwlbhfiaknuodiaohdfpgmbeckckeokkaokbmotnutytynjydtaelnfxrfrysovlcfwemskgtpaafsjpdkhfbacefmqdrowtfgdsolcsnngotsdevtfsjlzctsurfmhsgdbgbbdistvwaytesrylcwsguyoxhh";
 
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
@@ -90,11 +105,17 @@ describe("EVM Wallet", function () {
     // https://bscscan.com/tx/0xa8d4bd99e1f361bcf4734fd25be9f4badd5e07def08854578b7791332ef2b3c3
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/OLADTPDAGDSWLDPANTTOCHGWAMRHFELKJTNSOXPYLKAOHDDNWDLALRPRTIHYAELFGMAYMWBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFELTATCYZCGALGAEAELAETLALAAXADAACSETAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFENTGREETE";
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
 
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
     const expectedUR =
       "ur:eth-signature/oeadtpdagdswldpanttochgwamrhfelkjtnsoxpylkaohdfpmywyzoytesjkclgewpksylzovezeidoxytcnhgkgwfcspeghrhbwjtjpkgfwvogsfthnplwfetneyavyvltlqdoevytdlsesfzjekgpkfxcslptlndfneoaakpbbbssgmucavosalp";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
@@ -119,11 +140,17 @@ describe("EVM Wallet", function () {
     // https://bscscan.com/tx/0x3a720a6e0c456040af834ef2b622683313c193142cea56bb7fb470ca21bf6095
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/OLADTPDAGDJZLYHHETWMDNFLBZPYJZJYCTHNRFVLKTAOHDIMYAISADLRPRTIHYAELFPSGEMWGOTEMKEYJLNLAHNEYLKPFDGMFGNLMHDIQDCFKKGOLAROFYASHYOSQDAEAEAEAEAEAEAEAEAEAEAEAESFMNJNAESEKBQZEHECBNJZGDTPROWTGYKORHBDBYAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEADVWWTKIIMPAGAMHAEAEETLALAAXADAACSETAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEFSTSWERK";
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
 
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
     const expectedUR =
       "ur:eth-signature/oeadtpdagdjzlyhhetwmdnflbzpyjzjycthnrfvlktaohdfplololtsscpgtjplfadsomhvwjptyssiafplojnjztdkbethtjtyalfrhdnfemnmhbdrksegyoektcmstglpsvtmklgotsozettnsvdoxosftiamkhgcwmunbwkbtfxismwptiniofs";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
@@ -150,11 +177,17 @@ describe("EVM Wallet", function () {
     // https://etherscan.io/tx/0x0d31395f99c761a13690b2b84af147e107dd20a366c4560a314a734aa114a156
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/OLADTPDAGDCTLYESWTLPDEGARONEPMMUAAKGDYCMTYAOHDDRAOVSADLALRAHYKVYAELPAXKBBYTBAELFGMAYMWBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFELALARTAXAAAAADAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEEYDTMWEO";
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
 
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
     const expectedUR =
       "ur:eth-signature/oeadtpdagdctlyeswtlpdegaronepmmuaakgdycmtyaohdfpgscttopflyndkgpyfzrydylyvtbbdlktgsmsihbkiekguewfuobeaxtkplimjehkdpsnbazcylatlrbtyafrlyltzsnnyalgehtlprlpvynlgubgytcsmneyintkhdfzaeoynsgsyt";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
@@ -185,11 +218,17 @@ describe("EVM Wallet", function () {
     // https://etherscan.io/tx/0x1b7fab840a7e169fa8a01a787b12d3f93b6baac061c24e6277e2ed255cc22b44
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/OLADTPDAGDUYTALKKSUEVSFDFPRENSADGSHTZCNERFAOHDJOAOYAJNADADLRAHYKVYAELPAXKBBYTBAELFWPAYMWNBROINMESWCLLUENSETTNTGEDMNNPFTOENAMWMFDLAROFYASHYOSQDAEAEAEAEAEAEAEAEAEAEAEAEFHSOCYFTZCJOESHHTYMTSWFLTLOLSFNTGRDNLBPMAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAEAOCMGRSOAERTAXAAAAADAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEIDUYROTA";
+    const decoder = new URRegistryDecoder();
+    decoder.receivePart(signRequestQRString);
 
+    expect(decoder.isComplete()).toBe(true);
+    expect(decoder.isSuccess()).toBe(true);
+
+    const ur = decoder.resultUR();
     const expectedUR =
       "ur:eth-signature/oeadtpdagduytalkksuevsfdfprensadgshtzcnerfaohdfpmsverowttbetheaxfzsfbwmowngugosasfldhysatkvedraapymstbrfykimrlhhimlaihhgcmdthsqzaddlfhqzhtplbyoyiejtoyaylkrdlpwzdmgyykltmwwdgydmaeeysnrfpk";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
-    const request = wallet.parseRequest(signRequestQRString);
+    const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
     if (request != null) {
