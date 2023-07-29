@@ -1,6 +1,6 @@
 {
   "name": "doom-wallet-core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Core functions to manage key, cbor and sign transactions.",
   "keywords": [
     "ethereum",

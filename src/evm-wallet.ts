@@ -104,4 +104,9 @@ export class EVMWallet {
     const privateKey = this.hdKey.getDerivedPrivateKeyByIndex(index);
     return bytesToHex(privateToAddress(privateKey));
   }
+
+  public getDerivedAddressByPath(path: string): string {
+    const privateKey = this.hdKey.getDerivedPrivateKey(path);
+    return bytesToHex(privateToAddress(privateKey));
+  }
 }
