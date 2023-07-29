@@ -191,7 +191,10 @@ export class TransactionSignRequest extends BaseSignRequest {
       nonce: bytesToInt(nonce),
       gasPrice: bytesToBigInt(gasPrice),
       gasLimit: bytesToBigInt(gasLimit),
-      to: bytesToHex(to),
+      to:
+        to.length === 0
+          ? "0x0000000000000000000000000000000000000000"
+          : bytesToHex(to),
       value: bytesToBigInt(value),
       data: bytesToHex(data),
     };
@@ -251,7 +254,9 @@ export class EIP1559TransactionSignRequest extends BaseSignRequest {
     );
     this.payload = {
       nonce: Number(this.transaction.nonce),
-      to: this.transaction.to!.toString(),
+      to: this.transaction.to
+        ? this.transaction.to.toString()
+        : "0x0000000000000000000000000000000000000000",
       value: this.transaction.value,
       /**
        * hex string
