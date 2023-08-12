@@ -11,11 +11,10 @@ import { UR } from "@ngraveio/bc-ur";
 import { SignRequest, parseEthSignRequest } from "./request";
 
 export class EVMWallet {
-  readonly hdKey: Key;
-  readonly compressedPublicKey: string;
-  name: string;
+  readonly key: Key;
+  readonly name: string;
   constructor(key: Key, name = "DOOM Wallet ") {
-    this.hdKey = key;
+    this.key = key;
     this.name = name;
   }
 
@@ -24,17 +23,20 @@ export class EVMWallet {
    * (Uniform Resource, https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2020-006-urtypes.md)
    */
   getConnectionUR() {
-    let childrenPath = new CryptoKeypath(this.getPathComponents(Key.ChildPath));
-    let originComponents = this.getPathComponents(Key.OriginPath);
+    let childrenPath = new CryptoKeypath(this.getPathComponents(CHILD_PATH));
+
+    const extendedPublicKey = this.key.derivePath(EXTENDED_PATH);
+    let originComponents = this.getPathComponents(EXTENDED_PATH);
+
     let cryptoHD = new CryptoHDKey({
       isMaster: false,
       isPrivateKey: false,
-      key: this.hdKey.middleKey.publicKey,
-      chainCode: this.hdKey.middleKey.chainCode,
+      key: extendedPublicKey.publicKey,
+      chainCode: extendedPublicKey.chainCode,
       origin: new CryptoKeypath(
         originComponents,
-        this.hdKey.middleKey.parentFingerprint,
-        this.hdKey.middleKey.depth
+        extendedPublicKey.parentFingerprint!,
+        extendedPublicKey.depth
       ),
       children: childrenPath,
       name: this.name,
@@ -59,7 +61,7 @@ export class EVMWallet {
   }
 
   signRequest(request: SignRequest) {
-    const signature = request.sign(this.hdKey);
+    const signature = request.sign(this.key);
     return signature.toUREncoder(10000).nextPart();
   }
 
@@ -93,12 +95,20 @@ export class EVMWallet {
   }
 
   public getDerivedAddressByIndex(index: number): string {
-    const privateKey = this.hdKey.getDerivedPrivateKeyByIndex(index);
-    return bytesToHex(privateToAddress(privateKey));
+    const path = FULL_PATH.replace("*", String(index));
+    return this.getDerivedAddressByPath(path);
   }
 
   public getDerivedAddressByPath(path: string): string {
-    const privateKey = this.hdKey.getDerivedPrivateKey(path);
-    return bytesToHex(privateToAddress(privateKey));
+    const derived = this.key.derivePath(path);
+    return bytesToHex(privateToAddress(derived.privateKey));
   }
 }
+
+/**
+ * FullPath = OriginPath + ChildPath + wildcard
+ * We use a originPath to generate a middle public key to export
+ */
+const FULL_PATH = "m/89'/6'/4/20'/19/666/*/1024";
+const EXTENDED_PATH = "m/89'/6'/4/20'/19";
+const CHILD_PATH = "m/666/*/1024";

@@ -99,7 +99,7 @@ export class MessageSignRequest extends BaseSignRequest {
   }
 
   sign(key: Key) {
-    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
+    const derivedPrivateKey = key.derivePath(this.derivationPath).privateKey;
     let hexSig = personalSign({
       privateKey: derivedPrivateKey,
       data: this.originData,
@@ -128,7 +128,7 @@ export class TypedDataSignRequest extends BaseSignRequest {
   }
 
   sign(key: Key) {
-    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
+    const derivedPrivateKey = key.derivePath(this.derivationPath).privateKey;
     const data = JSON.parse(this.originData.toString());
     let hexSig = signTypedData({
       privateKey: derivedPrivateKey,
@@ -205,7 +205,7 @@ export class TransactionSignRequest extends BaseSignRequest {
   }
 
   sign(key: Key) {
-    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
+    const derivedPrivateKey = key.derivePath(this.derivationPath).privateKey;
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);
@@ -272,7 +272,7 @@ export class EIP1559TransactionSignRequest extends BaseSignRequest {
   }
 
   sign(key: Key) {
-    const derivedPrivateKey = key.getDerivedPrivateKey(this.derivationPath);
+    const derivedPrivateKey = key.derivePath(this.derivationPath).privateKey;
 
     const signed = this.transaction.sign(derivedPrivateKey);
     const rsv = concatSig(signed.r, signed.s, signed.v);

@@ -13,23 +13,17 @@ import {
   toBytes,
 } from "@doomjs/ethereumjs-util";
 
-type MiddleKey = {
-  publicKey: Buffer;
-  chainCode: Buffer;
-  parentFingerprint: Buffer;
-  index: number;
-  depth: number;
-};
-
 export class Key {
-  readonly privateKey: string;
-  readonly chainCode: string;
-  readonly publicKey: string;
-  readonly address: string;
+  readonly privateKey: Buffer;
+  readonly chainCode: Buffer;
+  readonly publicKey: Buffer;
+  readonly fingerprint: Buffer;
+  // if it is master key, parentFingerprint is null
+  readonly parentFingerprint: Buffer | null;
+  readonly depth: number;
+  readonly hdKey: HDKey;
+
   readonly mnemonic: string | null;
-  protected hdKey: HDKey;
-  private middleHDKey: HDKey;
-  readonly middleKey: MiddleKey;
 
   static fromMnemonic(mnemonic: string, password: string) {
     let seed = mnemonicToSeedSync(mnemonic, password);
@@ -71,54 +65,23 @@ export class Key {
     if (hdKey.privateKey == null || hdKey.chainCode == null) {
       throw new Error("HDKey: expected with privateKey");
     }
-    this.privateKey = bytesToHex(hdKey.privateKey);
-    this.chainCode = bytesToHex(hdKey.chainCode);
-    this.publicKey = bytesToHex(privateToPublic(hdKey.privateKey));
-    this.address = bytesToHex(
-      publicToAddress(privateToPublic(Buffer.from(hdKey.privateKey)))
-    );
-
-    // middle key
-    this.middleHDKey = hdKey.derive(Key.OriginPath);
-    if (
-      this.middleHDKey.chainCode === null ||
-      this.middleHDKey.publicKey == null
-    ) {
-      throw new Error("HDKey: middle must have chaincode and publickey");
+    this.privateKey = Buffer.from(hdKey.privateKey);
+    this.chainCode = Buffer.from(hdKey.chainCode);
+    this.publicKey = Buffer.from(hdKey.publicKey!);
+    this.fingerprint = Buffer.from(toBytes(hdKey.fingerprint));
+    this.depth = hdKey.depth;
+    if (this.depth === 0) {
+      this.parentFingerprint = null;
+    } else {
+      this.parentFingerprint = Buffer.from(toBytes(hdKey.parentFingerprint));
     }
-    this.middleKey = {
-      publicKey: Buffer.from(this.middleHDKey.publicKey),
-      chainCode: Buffer.from(this.middleHDKey.chainCode),
-      parentFingerprint: Buffer.from(
-        toBytes(this.middleHDKey.parentFingerprint)
-      ),
-      index: this.middleHDKey.index,
-      depth: this.middleHDKey.depth,
-    };
   }
 
-  /**
-   * FullPath = OriginPath + ChildPath + wildcard
-   * We use a originPath to generate a middle public key to export
-   */
-  static FullPath = "M/89'/6'/4/20'/19/666/*/1024";
-  static OriginPath = "M/89'/6'/4/20'/19";
-  static ChildPath = "M/666/*/1024";
-  static MAX_INDEX = 1000;
-
-  getDerivedPrivateKeyByIndex(index: number): Buffer {
-    if (index > Key.MAX_INDEX) {
-      throw new Error("index can't be larger than 1000");
-    }
-    const fullPath = Key.FullPath.replace("*", String(index));
-    return this.getDerivedPrivateKey(fullPath);
+  derivePath(path: string): Key {
+    const derived = this.hdKey.derive(path);
+    return new Key(derived, null);
   }
-
-  getDerivedPrivateKey(path: string): Buffer {
-    let hdkey = this.hdKey.derive(path);
-    if (hdkey.privateKey == null) {
-      throw new Error("HDKey: can't get privateKey");
-    }
-    return Buffer.from(hdkey.privateKey);
+  sign(hash: Buffer): Buffer {
+    return Buffer.from(this.hdKey.sign(hash));
   }
 }
