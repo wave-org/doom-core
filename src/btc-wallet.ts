@@ -13,7 +13,50 @@ import {
   CryptoPSBT,
 } from "@keystonehq/bc-ur-registry";
 
-export class BtcWallet {
+const jsonReplacer = (key: string, value: any) => {
+  if (value.type === "Buffer") {
+    return bytesToHex(value.data);
+  }
+  return value;
+};
+export class BTCSignRequest {
+  readonly psbt: Psbt;
+  // formated json string
+  readonly inputTx: string;
+  readonly outputTx: string;
+  readonly inputData: string;
+  readonly outputData: string;
+  readonly PSBTGlobalMap: string;
+  readonly version: number;
+  readonly locktime: number;
+  readonly fee: number;
+
+  constructor(psbt: Psbt) {
+    // psbt.finalizeAllInputs();
+    this.psbt = psbt;
+    this.inputTx = JSON.stringify(psbt.txInputs, jsonReplacer, 4);
+    // console.log(this.inputTx);
+    this.outputTx = JSON.stringify(psbt.txOutputs, jsonReplacer, 4);
+    this.inputData = JSON.stringify(psbt.data.inputs, jsonReplacer, 4);
+    this.outputData = JSON.stringify(psbt.data.outputs, jsonReplacer, 4);
+    this.PSBTGlobalMap = JSON.stringify(psbt.data.globalMap, jsonReplacer, 4);
+    this.version = psbt.version;
+    this.locktime = psbt.locktime;
+    // calculate fee, maybe not accurate
+    const output = psbt.txOutputs.reduce((acc, output) => {
+      return acc + output.value;
+    }, 0);
+    const input = psbt.data.inputs.reduce((acc, input) => {
+      if (input.witnessUtxo) {
+        return acc + input.witnessUtxo.value;
+      }
+      return acc;
+    }, 0);
+    this.fee = input - output;
+  }
+}
+
+export class BTCWallet {
   readonly key: Key;
   readonly name: string;
   constructor(key: Key, name = "DOOM Wallet ") {
@@ -25,14 +68,14 @@ export class BtcWallet {
   // BIP 44 https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
   // static DERIVATION_PATH = "m/84'/0'/0'/0/0";
   // the blue wallet will generate addresses by add "change" and "index"
-  static BASE_DERIVATION_PATH = "m/84'/0'/0'";
+  static readonly BASE_DERIVATION_PATH = "m/84'/0'/0'";
 
   getConnectionUR() {
     let originComponents = this.getPathComponents(
-      BtcWallet.BASE_DERIVATION_PATH
+      BTCWallet.BASE_DERIVATION_PATH
     );
     const extendedPublicKey = this.key.derivePath(
-      BtcWallet.BASE_DERIVATION_PATH
+      BTCWallet.BASE_DERIVATION_PATH
     );
     const cryptoAccount = new CryptoAccount(
       Buffer.from(toBytes(this.key.hdKey.fingerprint)), // master fingerprint
@@ -95,13 +138,18 @@ export class BtcWallet {
     const psbt = CryptoPSBT.fromCBOR(ur.cbor);
     const uPsbtB64 = psbt.getPSBT().toString("base64");
     const psbtTx = Psbt.fromBase64(uPsbtB64);
-    return psbtTx;
+    return new BTCSignRequest(psbtTx);
   }
 
   // fragmentsLength is ur.cbor length
-  signRequest(request: Psbt, fragmentsLength: number = 1000): string[] {
-    request.signAllInputsHD(this.key);
-    const cryptoPSBT = new CryptoPSBT(request.toBuffer());
+  signRequest(
+    request: BTCSignRequest,
+    fragmentsLength: number = 1000
+  ): string[] {
+    const psbt = request.psbt.clone();
+    psbt.signAllInputsHD(this.key);
+    // psbt.finalizeAllInputs();
+    const cryptoPSBT = new CryptoPSBT(psbt.toBuffer());
     const ur = cryptoPSBT.toUREncoder(fragmentsLength).encodeWhole();
     return ur;
   }
@@ -111,13 +159,13 @@ export class BtcWallet {
 
   public getExternalAddress(index: number): string {
     return this.getDerivedAddressByPath(
-      BtcWallet.BASE_DERIVATION_PATH + "/0/" + index
+      BTCWallet.BASE_DERIVATION_PATH + "/0/" + index
     );
   }
 
   public getChangeAddress(index: number): string {
     return this.getDerivedAddressByPath(
-      BtcWallet.BASE_DERIVATION_PATH + "/1/" + index
+      BTCWallet.BASE_DERIVATION_PATH + "/1/" + index
     );
   }
 
