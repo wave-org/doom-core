@@ -19,10 +19,20 @@ const jsonReplacer = (key: string, value: any) => {
   }
   return value;
 };
+
+export interface DerivedAddress {
+  // hex string
+  masterFingerprint: string;
+  derivationPath: string;
+  // bc1 address
+  address: string;
+  publicKey: Buffer;
+}
 export class BTCSignRequest {
   readonly psbt: Psbt;
   // formated json string
   readonly inputTx: string;
+  readonly unsignedInputAddresses: DerivedAddress[];
   readonly outputTx: string;
   readonly inputData: string;
   readonly outputData: string;
@@ -52,16 +62,51 @@ export class BTCSignRequest {
       }
       return acc;
     }, 0);
+    this.unsignedInputAddresses = [];
+    psbt.data.inputs.forEach((input) => {
+      if (
+        input.partialSig === undefined &&
+        input.bip32Derivation !== undefined &&
+        input.witnessUtxo !== undefined
+      ) {
+        const bip32Derivation = input.bip32Derivation[0];
+        const address = bitcoinjs.payments.p2wpkh({
+          pubkey: bip32Derivation.pubkey,
+        }).address!;
+        this.unsignedInputAddresses.push({
+          masterFingerprint: bytesToHex(bip32Derivation.masterFingerprint),
+          derivationPath: bip32Derivation.path,
+          address: address,
+          publicKey: bip32Derivation.pubkey,
+        });
+      }
+    });
+
     this.fee = input - output;
+  }
+
+  public canSignByKey(key: Key): boolean {
+    // maybe it is a multisig wallet, so we need to check if the key can sign
+    let canSign = false;
+    this.unsignedInputAddresses.forEach((address) => {
+      const publicKey = key.derivePath(address.derivationPath).publicKey;
+      // return keyFingerprint === address.masterFingerprint;
+      if (publicKey.equals(address.publicKey)) {
+        canSign = true;
+      }
+    });
+    return canSign;
   }
 }
 
 export class BTCWallet {
   readonly key: Key;
   readonly name: string;
+  readonly masterFingerprint: string;
   constructor(key: Key, name = "DOOM Wallet ") {
     this.key = key;
     this.name = name;
+    this.masterFingerprint = bytesToHex(toBytes(this.key.hdKey.fingerprint));
   }
 
   // 84 means BIP-84, which is for segwit, and the address starts with bc1

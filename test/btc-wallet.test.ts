@@ -10,6 +10,7 @@ describe("BTCWallet", function () {
   it("get connection ur", async function () {
     const key = Key.fromMnemonic(mnemonic, password);
     const wallet = new BTCWallet(key, "xr");
+    expect(wallet.masterFingerprint).toBe("0xcc4bb496");
     const result = wallet.getConnectionUR();
     expect(result).toBe(
       "ur:crypto-account/oeadcysfgrqzmtaolytaadmwtaaddlonaxhdclaontgmltvowztngscnwpytylwpparninrsseylenmkpsaawpmhotwkkipldwytvtueaahdcxghsnqzgdsegoroenlukiimvtqzonrpiymdfzctrtutvllossbnglsfrttilfvllnamtaaddyotadlncsghykaeykaeykaocycsmudmisaxaxaycyykcmsntdasidksjpwydrynda"
@@ -57,6 +58,13 @@ describe("BTCWallet", function () {
     expect(tx.outputData.length).toBeGreaterThan(0);
     expect(tx.PSBTGlobalMap.length).toBeGreaterThan(0);
 
+    const canSign = tx.canSignByKey(key);
+    expect(canSign).toBe(true);
+    expect(tx.unsignedInputAddresses.length).toBe(1);
+    expect(tx.unsignedInputAddresses[0].address).toBe(
+      "bc1qds67vf6c6fypgfs64cvxh3euwyqnxttcluyues"
+    );
+
     const result = wallet.signRequest(tx);
     expect(result.length).toBe(1);
     expect(result[0]).toBe(
@@ -87,6 +95,14 @@ describe("BTCWallet", function () {
     expect(tx.inputData.length).toBeGreaterThan(0);
     expect(tx.outputData.length).toBeGreaterThan(0);
     expect(tx.PSBTGlobalMap.length).toBeGreaterThan(0);
+
+    const canSign = tx.canSignByKey(key);
+    expect(canSign).toBe(true);
+    expect(tx.unsignedInputAddresses.length).toBe(1);
+    expect(tx.unsignedInputAddresses[0].address).toBe(
+      "bc1qu42nq04ta7pgfyasmksxwxl4fswztsa9atfud3"
+    );
+
     const result = wallet.signRequest(tx);
 
     // console.log(result);
@@ -111,6 +127,13 @@ describe("BTCWallet", function () {
 
     const ur = decoder.resultUR();
     const tx = wallet.parseRequest(ur);
+
+    const canSign = tx.canSignByKey(key);
+    expect(canSign).toBe(true);
+    expect(tx.unsignedInputAddresses.length).toBe(1);
+    expect(tx.unsignedInputAddresses[0].address).toBe(
+      "bc1qu42nq04ta7pgfyasmksxwxl4fswztsa9atfud3"
+    );
     const result = wallet.signRequest(tx, 100);
     expect(tx.fee).toBe(876);
     expect(tx.version).toBe(2);
