@@ -101,7 +101,7 @@ export class Key {
 export interface WalletExportFormat {
   mnenomic?: string;
   password?: string;
-  extendedKey?: string;
+  privateExtendedKey?: string;
 }
 
 export const encryptWEF = (wef: WalletExportFormat, password: string) => {
