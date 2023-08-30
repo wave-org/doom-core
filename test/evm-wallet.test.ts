@@ -48,6 +48,26 @@ describe("EVM Wallet", function () {
     );
   });
 
+  it("change derivation path", async function () {
+    const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.setCustomDerivationPath("m/44'/60'/0'");
+    const ur = wallet.getConnectionUR();
+    expect(ur).toBe(
+      "ur:crypto-hdkey/olaowkaxhdclaoksiskpwmwfcwecismtkppltohpdepyspeoltjzbwmufxryaanscswtbysphejyqdaahdcxdrpfmdvohfoxjenygrlrdyaauecwftmotdwmldtsghditkutdnhyihuozcdlkodkamtaaddyotadlncsdwykcsfnykaeykaocysezcdpgaaxaxattaaddyoyadlflawkasjzfygwgwgtcxhghsjzjzihjycxtdztaavl"
+    );
+    const address0 = wallet.getDerivedAddressByIndex(0);
+    expect(address0.toLowerCase()).toBe(
+      "0x45135a25411d9a72badb95b4a36be9e97845dd5b"
+    );
+
+    wallet.setDefaultDerivationPath();
+    const ur2 = wallet.getConnectionUR();
+
+    expect(ur2).toBe(
+      "ur:crypto-hdkey/olaowkaxhdclaoflaxtdhhpfprlnjsdavapmsbdtvazsvwcybztaghmwplpmbeehisbtdpidpadyueaahdcxwmfsbadltbfyfgpysbhpmsnycamnfwnlvytnsbnsztjpqdrerffnzshdasqzrploamtaaddyotadlecshkykamykaawkbbykbwwkaocyfdosploxaxahattaaddyoyadlncfaonywklawkcfaaaewkasjzfygwgwgtcxhghsjzjzihjycxdaktoelf"
+    );
+  });
+
   it("ETH: sign personal message", async function () {
     const signRequestQRString =
       "UR:ETH-SIGN-REQUEST/ONADTPDAGDHTCTRKYKHDCEFYATMHMWSPWZMWMDWFTYAOHDCTFEKSHSJNJOJZIHCXHNJOIHJPJKJLJTHSJZHEJKINIOJTHNCXJNIHJKJKHSIOIHAXAXAHTAADDYOEADMHCSHKYKAMYKAAWKBBYKBWWKCFAONYWKAEWKCFAAAEWKAOCYFDOSPLOXAMGHBYIORTQDTBFEVOJSFPJZRSZTMUAXJNMNBYGDRLFEFXAXLYPD";

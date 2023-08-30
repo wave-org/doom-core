@@ -18,15 +18,45 @@ export class EVMWallet {
     this.name = name;
   }
 
+  private derivationPath = FULL_PATH;
+
+  public getDerivationPath() {
+    return this.derivationPath;
+  }
+  /**
+   * Set custom derivation path
+   * The real derivation path will be: path + wildcard
+   * If the path is m/44/60/0/0, the derivation path will be m/44/60/0/0/*
+   * @param path before the wildcard
+   */
+  setCustomDerivationPath(path: string) {
+    const regex = /^m(\/[0-9]+'?)+$/;
+    if (!regex.test(path)) {
+      throw new Error("Invalid derivation path");
+    }
+    this.derivationPath = path + "/*";
+  }
+
+  setDefaultDerivationPath() {
+    this.derivationPath = FULL_PATH;
+  }
+
   /**
    * return a UR for this HD wallet, which can be used to connect in MetaMask
    * (Uniform Resource, https://github.com/BlockchainCommons/Research/blob/master/papers/bcr-2020-006-urtypes.md)
    */
   getConnectionUR() {
-    let childrenPath = new CryptoKeypath(this.getPathComponents(CHILD_PATH));
+    let originPath = this.derivationPath.split("/*")[0];
+    let childPath = "m/*";
+    if (this.derivationPath === FULL_PATH) {
+      // if the derivation path is the default path, we need to use a different child path
+      childPath = "m/666/*/1024";
+      originPath = "m/89'/6'/4/20'/19";
+    }
+    let childrenKeyPath = new CryptoKeypath(this.getPathComponents(childPath));
 
-    const extendedPublicKey = this.key.derivePath(EXTENDED_PATH);
-    let originComponents = this.getPathComponents(EXTENDED_PATH);
+    const extendedPublicKey = this.key.derivePath(originPath);
+    let originComponents = this.getPathComponents(originPath);
 
     let cryptoHD = new CryptoHDKey({
       isMaster: false,
@@ -38,7 +68,7 @@ export class EVMWallet {
         extendedPublicKey.parentFingerprint!,
         extendedPublicKey.depth
       ),
-      children: childrenPath,
+      children: childrenKeyPath,
       name: this.name,
       /**
        * https://github.com/KeystoneHQ/keystone-airgaped-base/blob/76cd9a92b7a421895fb7a13e5071ec56cedfcdab/packages/base-eth-keyring/src/BaseKeyring.ts#L150C11-L150C28
@@ -95,7 +125,7 @@ export class EVMWallet {
   }
 
   public getDerivedAddressByIndex(index: number): string {
-    const path = FULL_PATH.replace("*", String(index));
+    const path = this.derivationPath.replace("*", String(index));
     return this.getDerivedAddressByPath(path);
   }
 
@@ -106,9 +136,6 @@ export class EVMWallet {
 }
 
 /**
- * FullPath = OriginPath + ChildPath + wildcard
- * We use a originPath to generate a middle public key to export
+ * Default derivation path
  */
 const FULL_PATH = "m/89'/6'/4/20'/19/666/*/1024";
-const EXTENDED_PATH = "m/89'/6'/4/20'/19";
-const CHILD_PATH = "m/666/*/1024";
