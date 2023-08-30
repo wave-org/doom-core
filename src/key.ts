@@ -5,6 +5,7 @@ import {
   entropyToMnemonic,
 } from "ethereum-cryptography/bip39/index.js";
 import { sha512_256 } from "@noble/hashes/sha512";
+import bs58check from "bs58check";
 import { wordlist } from "ethereum-cryptography/bip39/wordlists/english.js";
 import {
   bytesToHex,
@@ -12,6 +13,10 @@ import {
   publicToAddress,
   toBytes,
 } from "@doomjs/ethereumjs-util";
+import { chacha20poly1305 } from "@noble/ciphers/chacha";
+import { randomBytes } from "@noble/ciphers/webcrypto/utils";
+
+const salt = "doom salt string";
 
 export class Key {
   readonly privateKey: Buffer;
@@ -25,7 +30,7 @@ export class Key {
 
   readonly mnemonic: string | null;
 
-  static fromMnemonic(mnemonic: string, password: string) {
+  static fromMnemonic(mnemonic: string, password?: string) {
     let seed = mnemonicToSeedSync(mnemonic, password);
     let hdKey = HDKey.fromMasterSeed(seed);
     return new Key(hdKey, mnemonic);
@@ -37,13 +42,13 @@ export class Key {
   }
 
   static generateMenoicByHashString(givenStr: string) {
-    const entropy = sha512_256(givenStr + "doom salt string");
+    const entropy = sha512_256(givenStr + salt);
     return entropyToMnemonic(entropy, wordlist);
   }
 
   /// 256 bits hash hex string
   static hashPassword(password: string) {
-    const entropy = sha512_256(password + "doom salt string");
+    const entropy = sha512_256(password + salt);
     return bytesToHex(entropy);
   }
 
@@ -84,4 +89,41 @@ export class Key {
   sign(hash: Buffer): Buffer {
     return Buffer.from(this.hdKey.sign(hash));
   }
+
+  privateExtendedKey(): string {
+    return this.hdKey.privateExtendedKey;
+  }
+  publicExtendedKey(): string {
+    return this.hdKey.publicExtendedKey;
+  }
 }
+
+export interface WalletExportFormat {
+  mnenomic?: string;
+  password?: string;
+  extendedKey?: string;
+}
+
+export const encryptWEF = (wef: WalletExportFormat, password: string) => {
+  const data = Buffer.from(JSON.stringify(wef));
+  const key = sha512_256(password + salt);
+  const nonce12 = key.slice(0, 12);
+  const chacha = chacha20poly1305(key, nonce12);
+  const encrypted = chacha.encrypt(data);
+  const base58 = bs58check.encode(encrypted);
+  return base58;
+};
+
+export const decryptWEF = (
+  encrypted: string,
+  password: string
+): WalletExportFormat => {
+  const data = bs58check.decode(encrypted);
+  const key = sha512_256(password + salt);
+  const nonce12 = key.slice(0, 12);
+  const chacha = chacha20poly1305(key, nonce12);
+  const decrypted = chacha.decrypt(data);
+  const jsonStr = Buffer.from(decrypted).toString();
+  const json = JSON.parse(jsonStr);
+  return json;
+};

@@ -1,4 +1,4 @@
-import { Key } from "../src/key";
+import { Key, WalletExportFormat, encryptWEF, decryptWEF } from "../src/key";
 
 describe("Key", function () {
   const mnemonic =
@@ -57,5 +57,17 @@ describe("Key", function () {
     expect(result).toBe(
       "0xa3547f7fa65980d4fe135ab6c017f8285c4f686b0e26f7c18323287ebe96350c"
     );
+  });
+
+  it("encrypt and decrypt keystore", async function () {
+    const keyStore: WalletExportFormat = {
+      mnenomic: mnemonic,
+      password: password,
+    };
+    const keyStorePassword = "123456";
+    const encrypted = encryptWEF(keyStore, keyStorePassword);
+    const decrypted = decryptWEF(encrypted, keyStorePassword);
+    expect(decrypted.mnenomic).toBe(mnemonic);
+    expect(decrypted.password).toBe(password);
   });
 });
