@@ -113,6 +113,7 @@ export class BTCWallet {
   // BIP 44 https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
   // static DERIVATION_PATH = "m/84'/0'/0'/0/0";
   // the blue wallet will generate addresses by add "change" and "index"
+  // We can't change it now because BlueWallet doesn't support and is always using this path
   static readonly BASE_DERIVATION_PATH = "m/84'/0'/0'";
 
   getConnectionUR() {
