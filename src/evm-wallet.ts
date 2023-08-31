@@ -18,9 +18,11 @@ export class EVMWallet {
     this.name = name;
   }
 
-  private derivationPath = FULL_PATH;
+  static readonly defaultPath = "m/89'/6'/4/20'/19/666/*/1024";
 
-  public getDerivationPath() {
+  private derivationPath = EVMWallet.defaultPath;
+
+  getDerivationPath() {
     return this.derivationPath;
   }
   /**
@@ -37,8 +39,8 @@ export class EVMWallet {
     this.derivationPath = path + "/*";
   }
 
-  setDefaultDerivationPath() {
-    this.derivationPath = FULL_PATH;
+  useDefaultDerivationPath() {
+    this.derivationPath = EVMWallet.defaultPath;
   }
 
   /**
@@ -48,7 +50,7 @@ export class EVMWallet {
   getConnectionUR() {
     let originPath = this.derivationPath.split("/*")[0];
     let childPath = "m/*";
-    if (this.derivationPath === FULL_PATH) {
+    if (this.derivationPath === EVMWallet.defaultPath) {
       // if the derivation path is the default path, we need to use a different child path
       childPath = "m/666/*/1024";
       originPath = "m/89'/6'/4/20'/19";
@@ -124,18 +126,13 @@ export class EVMWallet {
     return componenets;
   }
 
-  public getDerivedAddressByIndex(index: number): string {
+  getDerivedAddressByIndex(index: number): string {
     const path = this.derivationPath.replace("*", String(index));
     return this.getDerivedAddressByPath(path);
   }
 
-  public getDerivedAddressByPath(path: string): string {
+  getDerivedAddressByPath(path: string): string {
     const derived = this.key.derivePath(path);
     return bytesToHex(privateToAddress(derived.privateKey));
   }
 }
-
-/**
- * Default derivation path
- */
-const FULL_PATH = "m/89'/6'/4/20'/19/666/*/1024";

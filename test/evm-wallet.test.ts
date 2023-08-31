@@ -60,7 +60,7 @@ describe("EVM Wallet", function () {
       "0x45135a25411d9a72badb95b4a36be9e97845dd5b"
     );
 
-    wallet.setDefaultDerivationPath();
+    wallet.useDefaultDerivationPath();
     const ur2 = wallet.getConnectionUR();
 
     expect(ur2).toBe(

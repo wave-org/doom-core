@@ -201,21 +201,21 @@ export class BTCWallet {
   }
 
   // page size of addresses
-  public static readonly PAGE_SIZE = 20;
+  static readonly PAGE_SIZE = 20;
 
-  public getExternalAddress(index: number): string {
+  getExternalAddress(index: number): string {
     return this.getDerivedAddressByPath(
       BTCWallet.BASE_DERIVATION_PATH + "/0/" + index
     );
   }
 
-  public getChangeAddress(index: number): string {
+  getChangeAddress(index: number): string {
     return this.getDerivedAddressByPath(
       BTCWallet.BASE_DERIVATION_PATH + "/1/" + index
     );
   }
 
-  public getDerivedAddressByPath(path: string): string {
+  getDerivedAddressByPath(path: string): string {
     const derived = this.key.derivePath(path);
     // address start with bc1
     const address = bitcoinjs.payments.p2wpkh({ pubkey: derived.publicKey })
