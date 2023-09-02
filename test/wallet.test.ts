@@ -4,6 +4,8 @@ import {
   encryptWEF,
   decryptWEF,
   isWEF,
+  encrypt,
+  decrypt,
 } from "../src/key";
 
 describe("Key", function () {
@@ -80,6 +82,12 @@ describe("Key", function () {
     const decrypted = decryptWEF(encrypted, keyStorePassword);
     expect(decrypted.mnemonic).toBe(mnemonic);
     expect(decrypted.password).toBe(password);
+  });
+
+  it("encrypt and decrypt mnemonic", async function () {
+    const encrypted = encrypt(mnemonic, password);
+    const decrypted = decrypt(encrypted, password);
+    expect(decrypted).toBe(mnemonic);
   });
 
   it("validate mnemonic", async function () {

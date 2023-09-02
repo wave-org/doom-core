@@ -139,3 +139,23 @@ export const decryptWEF = (
   const json = JSON.parse(jsonStr);
   return json;
 };
+
+export const encrypt = (plainText: string, password: string): string => {
+  const data = Buffer.from(plainText);
+  const key = sha512_256(password + salt);
+  const nonce12 = key.slice(0, 12);
+  const chacha = chacha20poly1305(key, nonce12);
+  const encrypted = chacha.encrypt(data);
+  const base58 = bs58check.encode(encrypted);
+  return base58;
+};
+
+export const decrypt = (cipherText: string, password: string): string => {
+  const data = bs58check.decode(cipherText);
+  const key = sha512_256(password + salt);
+  const nonce12 = key.slice(0, 12);
+  const chacha = chacha20poly1305(key, nonce12);
+  const decrypted = chacha.decrypt(data);
+  const plainText = Buffer.from(decrypted).toString();
+  return plainText;
+};
