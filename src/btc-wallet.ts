@@ -30,7 +30,7 @@ export interface DerivedAddress {
 }
 export class BTCSignRequest {
   readonly psbt: Psbt;
-  // formated json string
+  // formatted json string
   readonly inputTx: string;
   readonly unsignedInputAddresses: DerivedAddress[];
   readonly outputTx: string;
@@ -109,7 +109,7 @@ export class BTCWallet {
     this.masterFingerprint = bytesToHex(toBytes(this.key.hdKey.fingerprint));
   }
 
-  // 84 means BIP-84, which is for segwit, and the address starts with bc1
+  // 84 means BIP-84, which is for SegWit, and the address starts with bc1
   // BIP 44 https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
   // static DERIVATION_PATH = "m/84'/0'/0'/0/0";
   // the blue wallet will generate addresses by add "change" and "index"
@@ -154,7 +154,7 @@ export class BTCWallet {
    */
   private getPathComponents(path: string) {
     let items = path.split("/");
-    let componenets = items.slice(1).map((item) => {
+    let components = items.slice(1).map((item) => {
       let lastCharacter = item.charAt(item.length - 1);
       if (lastCharacter == "'") {
         let index = parseInt(item);
@@ -174,7 +174,7 @@ export class BTCWallet {
         });
       }
     });
-    return componenets;
+    return components;
   }
 
   parseRequest(ur: UR) {

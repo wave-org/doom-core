@@ -1,11 +1,13 @@
 import { Key, WalletExportFormat, encryptWEF, decryptWEF } from "../src/key";
 
 describe("Key", function () {
+  // cSpell:disable
   const mnemonic =
     "farm library shuffle knee equal blush disease table deliver custom farm stereo fat level dawn book advance lamp clutch crumble gaze law bird jazz";
   const password = "j1io2u7$@081nf%@au0-,.,3151lijasfa";
-  const extenedKey =
+  const extendedKey =
     "xprvA2gJS5hGkExyUVvs39pAqNKwHw1N1JLUjCXhhtASUKYMjbJCrLzVu2yXT9ACYg8pKGPTNQWTgnrVU26hWfEXBxfjicHYpTGPzNQxokufcZf";
+  /* cSpell:enable */
 
   it("generate a random mnemonic", async function () {
     const result = Key.fromRandomMnemonic(password);
@@ -29,7 +31,7 @@ describe("Key", function () {
   });
 
   it("load from extended key", async function () {
-    const result = Key.fromExtendedKey(extenedKey);
+    const result = Key.fromExtendedKey(extendedKey);
     expect(result.publicKey).not.toBeNull();
     expect(result.privateKey).not.toBeNull();
     expect(result.chainCode).not.toBeNull();
@@ -45,7 +47,7 @@ describe("Key", function () {
   });
 
   it("generate a mnemonic by hash string", async function () {
-    const result = Key.generateMenoicByHashString("test");
+    const result = Key.generateMnemonicByHashString("test");
     expect(result.split(" ")).toHaveLength(24);
     expect(result).toBe(
       "supply poet damage retreat wish debate crunch two silent purpose lobster tortoise favorite mask want prosper clap video scheme label bulk soup comic park"
@@ -61,13 +63,20 @@ describe("Key", function () {
 
   it("encrypt and decrypt keystore", async function () {
     const keyStore: WalletExportFormat = {
-      mnenomic: mnemonic,
+      mnemonic: mnemonic,
       password: password,
     };
     const keyStorePassword = "123456";
     const encrypted = encryptWEF(keyStore, keyStorePassword);
     const decrypted = decryptWEF(encrypted, keyStorePassword);
-    expect(decrypted.mnenomic).toBe(mnemonic);
+    expect(decrypted.mnemonic).toBe(mnemonic);
     expect(decrypted.password).toBe(password);
+  });
+
+  it("validate mnemonic", async function () {
+    const result = Key.validateMnemonic(mnemonic);
+    expect(result).toBe(true);
+    const result2 = Key.validateMnemonic(mnemonic + "1");
+    expect(result2).toBe(false);
   });
 });

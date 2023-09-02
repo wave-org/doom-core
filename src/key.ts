@@ -7,6 +7,7 @@ import {
 import { sha512_256 } from "@noble/hashes/sha512";
 import bs58check from "bs58check";
 import { wordlist } from "ethereum-cryptography/bip39/wordlists/english.js";
+import { validateMnemonic } from "ethereum-cryptography/bip39/index.js";
 import {
   bytesToHex,
   privateToPublic,
@@ -30,6 +31,10 @@ export class Key {
 
   readonly mnemonic: string | null;
 
+  static validateMnemonic = (mnemonic: string) => {
+    return validateMnemonic(mnemonic, wordlist);
+  };
+
   static fromMnemonic(mnemonic: string, password?: string) {
     let seed = mnemonicToSeedSync(mnemonic, password);
     let hdKey = HDKey.fromMasterSeed(seed);
@@ -41,7 +46,7 @@ export class Key {
     return generateMnemonic(wordlist, 256);
   }
 
-  static generateMenoicByHashString(givenStr: string) {
+  static generateMnemonicByHashString(givenStr: string) {
     const entropy = sha512_256(givenStr + salt);
     return entropyToMnemonic(entropy, wordlist);
   }
@@ -99,7 +104,7 @@ export class Key {
 }
 
 export interface WalletExportFormat {
-  mnenomic?: string;
+  mnemonic?: string;
   password?: string;
   privateExtendedKey?: string;
 }

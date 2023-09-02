@@ -103,7 +103,7 @@ export class EVMWallet {
    */
   private getPathComponents(path: string) {
     let items = path.split("/");
-    let componenets = items.slice(1).map((item) => {
+    let components = items.slice(1).map((item) => {
       let lastCharacter = item.charAt(item.length - 1);
       if (lastCharacter == "'") {
         let index = parseInt(item);
@@ -123,7 +123,7 @@ export class EVMWallet {
         });
       }
     });
-    return componenets;
+    return components;
   }
 
   getDerivedAddressByIndex(index: number): string {
