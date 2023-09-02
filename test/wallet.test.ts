@@ -1,4 +1,10 @@
-import { Key, WalletExportFormat, encryptWEF, decryptWEF } from "../src/key";
+import {
+  Key,
+  WalletExportFormat,
+  encryptWEF,
+  decryptWEF,
+  isWEF,
+} from "../src/key";
 
 describe("Key", function () {
   // cSpell:disable
@@ -68,6 +74,9 @@ describe("Key", function () {
     };
     const keyStorePassword = "123456";
     const encrypted = encryptWEF(keyStore, keyStorePassword);
+
+    expect(isWEF(encrypted)).toBe(true);
+
     const decrypted = decryptWEF(encrypted, keyStorePassword);
     expect(decrypted.mnemonic).toBe(mnemonic);
     expect(decrypted.password).toBe(password);

@@ -109,6 +109,8 @@ export interface WalletExportFormat {
   privateExtendedKey?: string;
 }
 
+const WEFFormatPrefix = "DOOM|WEF|";
+
 export const encryptWEF = (wef: WalletExportFormat, password: string) => {
   const data = Buffer.from(JSON.stringify(wef));
   const key = sha512_256(password + salt);
@@ -116,14 +118,19 @@ export const encryptWEF = (wef: WalletExportFormat, password: string) => {
   const chacha = chacha20poly1305(key, nonce12);
   const encrypted = chacha.encrypt(data);
   const base58 = bs58check.encode(encrypted);
-  return base58;
+  return WEFFormatPrefix + base58;
+};
+
+export const isWEF = (encrypted: string) => {
+  return encrypted.startsWith(WEFFormatPrefix);
 };
 
 export const decryptWEF = (
   encrypted: string,
   password: string
 ): WalletExportFormat => {
-  const data = bs58check.decode(encrypted);
+  const rawData = encrypted.slice(WEFFormatPrefix.length);
+  const data = bs58check.decode(rawData);
   const key = sha512_256(password + salt);
   const nonce12 = key.slice(0, 12);
   const chacha = chacha20poly1305(key, nonce12);
