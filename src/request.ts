@@ -35,7 +35,7 @@ export interface SignRequest {
   id: string;
   type: RequestType;
   chainID: number | null;
-  address: string;
+  address?: string;
 
   payload: any;
   derivationPath: string;
@@ -45,7 +45,8 @@ export interface SignRequest {
 class BaseSignRequest implements SignRequest {
   readonly id: string;
   readonly chainID: number | null;
-  readonly address: string;
+  // address may be undefined
+  readonly address?: string;
   readonly type: RequestType;
   readonly derivationPath: string;
   protected originData: Buffer;
@@ -68,12 +69,9 @@ class BaseSignRequest implements SignRequest {
     }
 
     const _address = request.getSignRequestAddress();
-    if (_address == undefined) {
-      throw new Error(
-        "EthSignRequest: request.getSignRequestAddress() can not be undefined"
-      );
+    if (_address !== undefined) {
+      this.address = bytesToHex(_address);
     }
-    this.address = bytesToHex(_address);
 
     this.originData = request.getSignData();
 
