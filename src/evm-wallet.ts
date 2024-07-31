@@ -18,7 +18,9 @@ export class EVMWallet {
     this.name = name;
   }
 
-  static readonly defaultPath = "m/89'/6'/4/20'/19/666/*/1024";
+  static readonly ledgerLegacyDerivationPath = "m/44'/60'/0'/*";
+  static readonly defaultPath = "m/44'/60'/0'/0/*";
+  static readonly doomPath = "m/89'/6'/4/20'/19/666/*/1024";
 
   private derivationPath = EVMWallet.defaultPath;
 
@@ -39,6 +41,14 @@ export class EVMWallet {
     this.derivationPath = path + "/*";
   }
 
+  useDoomDerivationPath() {
+    this.derivationPath = EVMWallet.doomPath;
+  }
+
+  useLedgerLegacyDerivationPath() {
+    this.derivationPath = EVMWallet.ledgerLegacyDerivationPath;
+  }
+
   useDefaultDerivationPath() {
     this.derivationPath = EVMWallet.defaultPath;
   }
@@ -50,8 +60,8 @@ export class EVMWallet {
   getConnectionUR() {
     let originPath = this.derivationPath.split("/*")[0];
     let childPath = "m/*";
-    if (this.derivationPath === EVMWallet.defaultPath) {
-      // if the derivation path is the default path, we need to use a different child path
+    if (this.derivationPath === EVMWallet.doomPath) {
+      // if the derivation path is the doom legacy path, we need to use a different child path
       childPath = "m/666/*/1024";
       originPath = "m/89'/6'/4/20'/19";
     }

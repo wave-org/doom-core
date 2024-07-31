@@ -18,6 +18,7 @@ describe("EVM Wallet", function () {
       "xprv9s21ZrQH143K2j5M2tjsLq291PngUQCDGGAh3rsFCufb2wWqbNPmbWmAh46kYn6pbfNSEwCnPanQ3vFzKwc3CiEKxjGjybPZR6TBv2wqZoW"
     );
     const wallet = new EVMWallet(key);
+    wallet.useDoomDerivationPath();
     const address0 = wallet.getDerivedAddressByIndex(0);
 
     expect(address0.toLowerCase()).toBe(
@@ -33,6 +34,7 @@ describe("EVM Wallet", function () {
   it("given mnemonic and password, get derived address", async function () {
     const key = Key.fromMnemonic(mnemonic, password);
     const wallet = new EVMWallet(key);
+    wallet.useDoomDerivationPath();
     const address0 = wallet.getDerivedAddressByIndex(0);
 
     expect(address0.toLowerCase()).toBe(
@@ -42,6 +44,7 @@ describe("EVM Wallet", function () {
 
   it("get connection ur", async function () {
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const ur = wallet.getConnectionUR();
     expect(ur).toBe(
       "ur:crypto-hdkey/olaowkaxhdclaoflaxtdhhpfprlnjsdavapmsbdtvazsvwcybztaghmwplpmbeehisbtdpidpadyueaahdcxwmfsbadltbfyfgpysbhpmsnycamnfwnlvytnsbnsztjpqdrerffnzshdasqzrploamtaaddyotadlecshkykamykaawkbbykbwwkaocyfdosploxaxahattaaddyoyadlncfaonywklawkcfaaaewkasjzfygwgwgtcxhghsjzjzihjycxdaktoelf"
@@ -60,7 +63,8 @@ describe("EVM Wallet", function () {
       "0x45135a25411d9a72badb95b4a36be9e97845dd5b"
     );
 
-    wallet.useDefaultDerivationPath();
+    // wallet.useDefaultDerivationPath();
+    wallet.useDoomDerivationPath();
     const ur2 = wallet.getConnectionUR();
 
     expect(ur2).toBe(
@@ -84,6 +88,7 @@ describe("EVM Wallet", function () {
       "ur:eth-signature/oeadtpdagdhtctrkykhdcefyatmhmwspwzmwmdwftyaohdfpzmfrehnnjerttnwdvdcxrhhhfwcslurkvdgmgymuaykoeeaagttkjtcxvdvebthljyjsasamztvlktpmeoasdavlimtshnferowfgsbbostacklpayynmeisdsjzlrcacwqzmeltmd";
 
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -110,6 +115,7 @@ describe("EVM Wallet", function () {
       "ur:eth-signature/oeadtpdagdjegddrhgftcefdjlpffwlbhfiaknuodiaohdfpgmbeckckeokkaokbmotnutytynjydtaelnfxrfrysovlcfwemskgtpaafsjpdkhfbacefmqdrowtfgdsolcsnngotsdevtfsjlzctsurfmhsgdbgbbdistvwaytesrylcwsguyoxhh";
 
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -135,6 +141,7 @@ describe("EVM Wallet", function () {
     const expectedUR =
       "ur:eth-signature/oeadtpdagdswldpanttochgwamrhfelkjtnsoxpylkaohdfpmywyzoytesjkclgewpksylzovezeidoxytcnhgkgwfcspeghrhbwjtjpkgfwvogsfthnplwfetneyavyvltlqdoevytdlsesfzjekgpkfxcslptlndfneoaakpbbbssgmucavosalp";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -170,6 +177,7 @@ describe("EVM Wallet", function () {
     const expectedUR =
       "ur:eth-signature/oeadtpdagdjzlyhhetwmdnflbzpyjzjycthnrfvlktaohdfplololtsscpgtjplfadsomhvwjptyssiafplojnjztdkbethtjtyalfrhdnfemnmhbdrksegyoektcmstglpsvtmklgotsozettnsvdoxosftiamkhgcwmunbwkbtfxismwptiniofs";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -207,6 +215,7 @@ describe("EVM Wallet", function () {
     const expectedUR =
       "ur:eth-signature/oeadtpdagdctlyeswtlpdegaronepmmuaakgdycmtyaohdfpgscttopflyndkgpyfzrydylyvtbbdlktgsmsihbkiekguewfuobeaxtkplimjehkdpsnbazcylatlrbtyafrlyltzsnnyalgehtlprlpvynlgubgytcsmneyintkhdfzaeoynsgsyt";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -248,6 +257,7 @@ describe("EVM Wallet", function () {
     const expectedUR =
       "ur:eth-signature/oeadtpdagduytalkksuevsfdfprensadgshtzcnerfaohdfpmsverowttbetheaxfzsfbwmowngugosasfldhysatkvedraapymstbrfykimrlhhimlaihhgcmdthsqzaddlfhqzhtplbyoyiejtoyaylkrdlpwzdmgyykltmwwdgydmaeeysnrfpk";
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
 
     expect(request).not.toBeNull();
@@ -283,6 +293,7 @@ describe("EVM Wallet", function () {
     decoder.receivePart(signRequestQRString);
     const ur = decoder.resultUR();
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
     expect(request).toBeInstanceOf(EIP1559TransactionSignRequest);
     expect(request.chainID).toBe(1);
@@ -299,6 +310,7 @@ describe("EVM Wallet", function () {
     decoder.receivePart(signRequestQRString);
     const ur = decoder.resultUR();
     const wallet = new EVMWallet(Key.fromMnemonic(mnemonic, password));
+    wallet.useDoomDerivationPath();
     const request = wallet.parseRequest(ur);
     expect(request).toBeInstanceOf(TransactionSignRequest);
     expect(request.chainID).toBe(56);
