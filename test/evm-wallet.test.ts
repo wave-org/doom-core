@@ -150,7 +150,7 @@ describe("EVM Wallet", function () {
       expect(result).toBe(expectedUR);
       expect(request.address).toBe(address);
       expect(request.chainID).toBe(56);
-      expect(request.type).toBe(RequestType.transaction);
+      expect(request.type).toBe(RequestType.legacyTransaction);
 
       const transactionRequest = request as TransactionSignRequest;
       expect(transactionRequest.payload.nonce).toBe(0);
@@ -186,7 +186,7 @@ describe("EVM Wallet", function () {
       expect(result).toBe(expectedUR);
       expect(request.address).toBe(address);
       expect(request.chainID).toBe(56);
-      expect(request.type).toBe(RequestType.transaction);
+      expect(request.type).toBe(RequestType.legacyTransaction);
 
       const transactionRequest = request as TransactionSignRequest;
       expect(transactionRequest.payload.nonce).toBe(1);

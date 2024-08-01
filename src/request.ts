@@ -26,7 +26,10 @@ import {
 } from "@doomjs/ethereumjs-tx";
 
 export enum RequestType {
+  // EIP1559
   transaction = 1,
+  // not EIP1559
+  legacyTransaction = 2,
   typedData = 2,
   personalMessage = 3,
 }
@@ -154,7 +157,7 @@ export type TransactionDetail = {
 
 export class TransactionSignRequest extends BaseSignRequest {
   readonly chainID: number;
-  readonly type = RequestType.transaction;
+  readonly type = RequestType.legacyTransaction;
   readonly payload: TransactionDetail;
 
   readonly transaction: LegacyTransaction;
