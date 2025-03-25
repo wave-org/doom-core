@@ -99,14 +99,81 @@ export class BTCSignRequest {
   }
 }
 
+export enum BTCAddressType {
+  LEGACY = 44,
+  TAPROOT = 86,
+  NESTED_SEGWIT = 49,
+  NATIVE_SEGWIT = 84,
+}
+
+export function constructDerivationRootPath(
+  type: BTCAddressType,
+  accountIndex: number
+): string {
+  if (accountIndex < 0) {
+    accountIndex = 0;
+  }
+  return `m/${type}'/0'/${accountIndex}'`;
+}
+
+export function addressTypeFromDerivationRootPath(
+  path: string
+): BTCAddressType {
+  const items = path.split("/");
+  const purpose = parseInt(items[1].slice(0, -1));
+  return purpose as BTCAddressType;
+}
+
+export function validateDerivationRootPath(path: string): boolean {
+  const items = path.split("/");
+  if (items.length < 4) {
+    return false;
+  }
+  if (items[0] !== "m") {
+    return false;
+  }
+  if (items[1].slice(-1) !== "'") {
+    return false;
+  }
+  if (items[2].slice(-1) !== "'") {
+    return false;
+  }
+  if (items[3].slice(-1) !== "'") {
+    return false;
+  }
+  const purpose = parseInt(items[1].slice(0, -1));
+  // const coinType = parseInt(items[2].slice(0, -1));
+  if (
+    purpose !== BTCAddressType.LEGACY &&
+    purpose !== BTCAddressType.TAPROOT &&
+    purpose !== BTCAddressType.NESTED_SEGWIT &&
+    purpose !== BTCAddressType.NATIVE_SEGWIT
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export class BTCWallet {
   readonly key: Key;
   readonly name: string;
   readonly masterFingerprint: string;
-  constructor(key: Key, name = "DOOM Wallet ") {
+  readonly addressType: BTCAddressType = BTCAddressType.NATIVE_SEGWIT;
+  readonly derivationRootPath: string = BTCWallet.NATIVE_SEGWIT_ROOT_PATH;
+  constructor(
+    key: Key,
+    name = "DOOM Wallet ",
+    derivationPath: string = BTCWallet.NATIVE_SEGWIT_ROOT_PATH
+  ) {
     this.key = key;
     this.name = name;
     this.masterFingerprint = bytesToHex(toBytes(this.key.hdKey.fingerprint));
+    if (validateDerivationRootPath(derivationPath)) {
+      this.derivationRootPath = derivationPath;
+      this.addressType = addressTypeFromDerivationRootPath(derivationPath);
+    } else {
+      throw new Error("Invalid derivation path");
+    }
   }
 
   // 84 means BIP-84, which is for SegWit, and the address starts with bc1
@@ -114,15 +181,19 @@ export class BTCWallet {
   // static DERIVATION_PATH = "m/84'/0'/0'/0/0";
   // the blue wallet will generate addresses by add "change" and "index"
   // We can't change it now because BlueWallet doesn't support and is always using this path
-  static readonly BASE_DERIVATION_PATH = "m/84'/0'/0'";
+
+  // Legacy, P2PKH; prefix: "1"
+  static readonly LEGACY_ROOT_PATH = "m/44'/0'/0'";
+  // Taproot, P2TR; prefix: "bc1p"
+  static readonly TAPROOT_ROOT_PATH = "m/86'/0'/0'";
+  // Nested SegWit, P2SH-P2WPKH; prefix: "3"
+  static readonly NESTED_SEGWIT_ROOT_PATH = "m/49'/0'/0'";
+  // Native SegWit, P2WPKH; prefix: "bc1q"
+  static readonly NATIVE_SEGWIT_ROOT_PATH = "m/84'/0'/0'";
 
   getConnectionUR() {
-    let originComponents = this.getPathComponents(
-      BTCWallet.BASE_DERIVATION_PATH
-    );
-    const extendedPublicKey = this.key.derivePath(
-      BTCWallet.BASE_DERIVATION_PATH
-    );
+    let originComponents = this.getPathComponents(this.derivationRootPath);
+    const extendedPublicKey = this.key.derivePath(this.derivationRootPath);
     const cryptoAccount = new CryptoAccount(
       Buffer.from(toBytes(this.key.hdKey.fingerprint)), // master fingerprint
       [
@@ -205,21 +276,32 @@ export class BTCWallet {
 
   getExternalAddress(index: number): string {
     return this.getDerivedAddressByPath(
-      BTCWallet.BASE_DERIVATION_PATH + "/0/" + index
+      this.derivationRootPath + "/0/" + index
     );
   }
 
   getChangeAddress(index: number): string {
     return this.getDerivedAddressByPath(
-      BTCWallet.BASE_DERIVATION_PATH + "/1/" + index
+      this.derivationRootPath + "/1/" + index
     );
   }
 
   getDerivedAddressByPath(path: string): string {
     const derived = this.key.derivePath(path);
-    // address start with bc1
-    const address = bitcoinjs.payments.p2wpkh({ pubkey: derived.publicKey })
-      .address!;
-    return address;
+    switch (this.addressType) {
+      case BTCAddressType.LEGACY:
+        return bitcoinjs.payments.p2pkh({ pubkey: derived.publicKey }).address!;
+      case BTCAddressType.TAPROOT:
+        return bitcoinjs.payments.p2tr({ pubkey: derived.publicKey }).address!;
+      case BTCAddressType.NESTED_SEGWIT:
+        return bitcoinjs.payments.p2sh({
+          redeem: bitcoinjs.payments.p2wpkh({ pubkey: derived.publicKey }),
+        }).address!;
+      case BTCAddressType.NATIVE_SEGWIT:
+        return bitcoinjs.payments.p2wpkh({ pubkey: derived.publicKey })
+          .address!;
+      default:
+        throw new Error("Unsupported address type");
+    }
   }
 }
