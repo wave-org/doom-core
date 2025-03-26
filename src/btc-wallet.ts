@@ -70,12 +70,33 @@ export class BTCSignRequest {
         input.witnessUtxo !== undefined
       ) {
         const bip32Derivation = input.bip32Derivation[0];
-        const address = bitcoinjs.payments.p2wpkh({
-          pubkey: bip32Derivation.pubkey,
-        }).address!;
+        const derivationPath = bip32Derivation.path;
+        const addressType = addressTypeFromDerivationRootPath(derivationPath);
+        let address = "unsupported address type";
+        switch (addressType) {
+          case BTCAddressType.LEGACY:
+            address = bitcoinjs.payments.p2pkh({
+              pubkey: bip32Derivation.pubkey,
+            }).address!;
+          case BTCAddressType.TAPROOT:
+            address = bitcoinjs.payments.p2tr({
+              pubkey: bip32Derivation.pubkey,
+            }).address!;
+          case BTCAddressType.NESTED_SEGWIT:
+            address = bitcoinjs.payments.p2sh({
+              redeem: bitcoinjs.payments.p2wpkh({
+                pubkey: bip32Derivation.pubkey,
+              }),
+            }).address!;
+          case BTCAddressType.NATIVE_SEGWIT:
+            address = bitcoinjs.payments.p2wpkh({
+              pubkey: bip32Derivation.pubkey,
+            }).address!;
+        }
+
         this.unsignedInputAddresses.push({
           masterFingerprint: bytesToHex(bip32Derivation.masterFingerprint),
-          derivationPath: bip32Derivation.path,
+          derivationPath: derivationPath,
           address: address,
           publicKey: bip32Derivation.pubkey,
         });
