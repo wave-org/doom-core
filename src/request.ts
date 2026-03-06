@@ -27,11 +27,12 @@ import {
 
 export enum RequestType {
   // EIP1559
-  transaction = 1,
+  transaction = 4,
   // not EIP1559
-  legacyTransaction = 2,
-  typedData = 2,
+  legacyTransaction = 1,
+
   personalMessage = 3,
+  typedData = 2,
 }
 
 export interface SignRequest {

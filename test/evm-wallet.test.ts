@@ -124,6 +124,7 @@ describe("EVM Wallet", function () {
       expect(request.address).toBe(address);
       expect(request.chainID).toBeNull();
       expect(result).toBe(expectedUR);
+      expect(request.type).toBe(RequestType.typedData);
     }
   });
 
